@@ -1,0 +1,5 @@
+UNLICENSED
+
+Copyright (c) CodeOrbit contributors.
+
+This package is not licensed for public redistribution without explicit permission.

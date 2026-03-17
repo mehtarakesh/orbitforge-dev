@@ -1,0 +1,43 @@
+{
+  "name": "codeorbit-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cross-platform desktop app for CodeOrbit.",
+  "license": "UNLICENSED",
+  "author": "CodeOrbit contributors",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p . && node scripts/copy-renderer.mjs",
+    "start": "npm run build && electron .",
+    "package": "npm run build && electron-builder",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win",
+    "package:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.forgestudio.codeorbit",
+    "productName": "CodeOrbit",
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis", "zip"]
+    },
+    "linux": {
+      "target": ["AppImage", "tar.gz"]
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "electron": "31.7.7",
+    "electron-builder": "26.8.1",
+    "typescript": "^5.3.3"
+  }
+}

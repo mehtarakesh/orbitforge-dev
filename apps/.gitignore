@@ -1,0 +1,10 @@
+apps/web/.next/
+apps/web/node_modules/
+apps/talent-code-tool-vscode/out/
+apps/talent-code-tool-vscode/*.vsix
+apps/talent-code-tool-vscode/node_modules/
+apps/talent-code-tool-cli/dist/
+apps/talent-code-tool-cli/*.tgz
+apps/talent-code-tool-cli/node_modules/
+apps/talent-code-tool-desktop/dist/
+apps/talent-code-tool-desktop/node_modules/

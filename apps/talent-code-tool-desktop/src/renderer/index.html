@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeOrbit AI Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">CodeOrbit AI Desktop</p>
+        <h1>Cross-platform coding operations for macOS, Windows, and Linux.</h1>
+        <p class="lede">
+          Switch between Ollama, LM Studio, Anthropic, OpenAI, OpenRouter, and compatible endpoints without leaving the desktop shell.
+        </p>
+      </section>
+
+      <section class="workspace">
+        <div class="panel">
+          <div class="grid">
+            <label>
+              <span>Provider</span>
+              <select id="provider">
+                <option value="ollama">Ollama</option>
+                <option value="lmstudio">LM Studio</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="openai-compatible">OpenAI-compatible</option>
+              </select>
+            </label>
+            <label>
+              <span>Model</span>
+              <input id="model" value="deepseek-coder:33b" />
+            </label>
+            <label>
+              <span>Base URL</span>
+              <input id="baseUrl" value="http://localhost:11434" />
+            </label>
+          </div>
+
+          <label>
+            <span>API key</span>
+            <input id="apiKey" type="password" placeholder="Optional for local providers" />
+          </label>
+
+          <label>
+            <span>Workspace context</span>
+            <textarea id="workspaceContext">Focus on coding-assistant UX, release readiness, provider interoperability, and docs parity.</textarea>
+          </label>
+
+          <label>
+            <span>Prompt</span>
+            <textarea id="prompt">Inspect the project, define the implementation plan, describe the patch strategy, and list release validation steps.</textarea>
+          </label>
+
+          <button id="runButton">Run prompt</button>
+        </div>
+
+        <div class="panel">
+          <p class="eyebrow">Output</p>
+          <pre id="output">Run a prompt to receive a plan, implementation notes, validation steps, and remaining risks.</pre>
+        </div>
+      </section>
+    </main>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

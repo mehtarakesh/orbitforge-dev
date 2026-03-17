@@ -1,0 +1,73 @@
+{
+  "name": "codeorbit-vscode",
+  "displayName": "CodeOrbit AI",
+  "description": "AI coding workspace for Ollama, LM Studio, Anthropic, OpenAI, and compatible endpoints.",
+  "version": "0.1.0",
+  "publisher": "forgestudio",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:codeOrbit.openPanel",
+    "onCommand:codeOrbit.explainSelection",
+    "onCommand:codeOrbit.generateFromWorkspace"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeOrbit.openPanel",
+        "title": "CodeOrbit AI: Open Panel"
+      },
+      {
+        "command": "codeOrbit.explainSelection",
+        "title": "CodeOrbit AI: Explain Selection"
+      },
+      {
+        "command": "codeOrbit.generateFromWorkspace",
+        "title": "CodeOrbit AI: Plan From Workspace"
+      }
+    ],
+    "configuration": {
+      "title": "CodeOrbit AI",
+      "properties": {
+        "codeOrbit.provider": {
+          "type": "string",
+          "default": "ollama",
+          "enum": ["ollama", "lmstudio", "openai", "anthropic", "openrouter", "openai-compatible"],
+          "description": "Active provider for CodeOrbit."
+        },
+        "codeOrbit.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Provider base URL. Use http://localhost:1234/v1 for LM Studio."
+        },
+        "codeOrbit.model": {
+          "type": "string",
+          "default": "deepseek-coder:33b",
+          "description": "Default model identifier."
+        },
+        "codeOrbit.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Optional API key for hosted providers."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.2",
+    "typescript": "^5.3.3"
+  }
+}
