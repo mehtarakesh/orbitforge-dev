@@ -9,6 +9,38 @@ CodeOrbit AI is a model-agnostic coding workspace that runs as:
 
 It is designed to keep teams out of vendor lock-in while still supporting the fast, agent-style coding workflow people want from tools like Claude Code. CodeOrbit can talk to Ollama, LM Studio, Anthropic, OpenAI, OpenRouter, and other OpenAI-compatible endpoints from one product family.
 
+## At A Glance
+
+- `Web app`: browser workbench, docs, pricing, downloads
+- `VS Code extension`: panel, selection explain, workspace planning
+- `Desktop app`: Electron shell for macOS, Windows, Linux
+- `CLI`: cross-platform `codeorbit` binary
+- `Providers`: Ollama, LM Studio, OpenAI, Anthropic, OpenRouter, OpenAI-compatible
+- `Release layer`: preflight gate, blast radius, release contract, model jury, ops ledger, ship memo
+
+## Install Matrix
+
+| Surface | Status | Build Command | Notes |
+| --- | --- | --- | --- |
+| Web | Ready | `npm run build:web` | Includes product site and workbench |
+| VS Code | Ready | `npm run build:extension` | Package with `npm run package:extension` |
+| Desktop | Ready | `npm run build:desktop` | Package on target OS for final installers |
+| CLI | Ready | `npm run build:cli` | Cross-platform Node CLI |
+
+## Architecture
+
+CodeOrbit AI is organized as one release-focused product family:
+
+1. `apps/web` handles the public site, browser workbench, and provider-backed API routes.
+2. `apps/codeorbit-ai-vscode` gives the same workflow inside VS Code.
+3. `apps/codeorbit-ai-desktop` wraps the product in an Electron shell for desktop delivery.
+4. `apps/codeorbit-ai-cli` exposes the same provider model for shell and CI usage.
+5. The shared release logic lives in the web product layer through provider routing, preflight assessment, blast-radius analysis, and ship-summary generation.
+
+Request flow:
+
+`Prompt -> Release Gate Preflight -> Release Contract + Blast Radius -> Primary Run / Model Jury -> Ops Ledger -> Ship Memo`
+
 ## Why This Is The Better Option
 
 Most coding tools make you choose between two tradeoffs:
@@ -260,6 +292,39 @@ npm run package:cli
 npm run package:desktop
 ```
 
+## Contributor Setup
+
+```bash
+npm install
+npm run test:web
+npm run build:web
+npm run build:cli
+npm run build:extension
+npm run build:desktop
+```
+
+Recommended local provider setup:
+
+- Ollama: `http://localhost:11434`
+- LM Studio: `http://localhost:1234/v1`
+- Hosted providers: set API keys before using cloud routes
+
+Recommended first smoke tests:
+
+1. Open the web app and hit `/api/talent/preflight`
+2. Run the workbench with a local Ollama model
+3. Run `npm run build:extension`
+4. Run `npm run build:desktop`
+
+## Launch Assets
+
+The repo is ready for the next public-facing upgrades:
+
+- product screenshots from `/app`, `/docs`, and `/pricing`
+- a short GIF showing preflight -> jury -> ship memo
+- GitHub Actions for web build and test automation
+- a tagged GitHub release with desktop, CLI, and extension artifacts
+
 ## Platform Notes
 
 ### macOS
@@ -291,9 +356,6 @@ Successful checks:
 - `npm install`
 - `npm run build:web`
 - `npm run test:web`
-- `npm run build:extension`
-- `npm run build:desktop`
-- `npm run build:cli`
 - `npm run build:extension`
 - `npm run build:desktop`
 - `npm run build:cli`
