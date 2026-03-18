@@ -1,5 +1,5 @@
 UNLICENSED
 
-Copyright (c) CodeOrbit contributors.
+Copyright (c) OrbitForge contributors.
 
 This package is not licensed for public redistribution without explicit permission.

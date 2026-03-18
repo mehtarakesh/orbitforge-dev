@@ -1,11 +1,11 @@
 {
-  "name": "codeorbit-cli",
+  "name": "orbitforge-cli",
   "version": "0.1.0",
   "private": true,
-  "description": "Cross-platform CLI for CodeOrbit.",
+  "description": "Cross-platform CLI for OrbitForge.",
   "license": "UNLICENSED",
   "bin": {
-    "codeorbit": "dist/cli.js"
+    "orbitforge": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc -p ."

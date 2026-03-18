@@ -12,7 +12,7 @@ type TalentRequest = {
   temperature?: number
 }
 
-const defaultSystemPrompt = `You are CodeOrbit AI, a release-ready software engineer.
+const defaultSystemPrompt = `You are OrbitForge, a release-ready software engineer.
 Always return:
 1. A concise plan.
 2. The implementation approach.
@@ -163,10 +163,10 @@ async function callProvider(input: TalentRequest) {
 }
 
 function printHelp() {
-  console.log(`CodeOrbit AI CLI
+  console.log(`OrbitForge CLI
 
 Usage:
-  codeorbit --provider ollama --model deepseek-coder:33b --prompt "Plan the next patch"
+  orbitforge --provider ollama --model deepseek-coder:33b --prompt "Plan the next patch"
 
 Options:
   --provider         ollama | lmstudio | openai | anthropic | openrouter | openai-compatible
@@ -212,6 +212,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : 'Talent CLI failed.'}\n`)
+  process.stderr.write(`${error instanceof Error ? error.message : 'OrbitForge CLI failed.'}\n`)
   process.exit(1)
 })

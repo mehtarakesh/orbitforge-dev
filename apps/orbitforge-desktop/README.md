@@ -1,4 +1,4 @@
-# CodeOrbit AI Desktop
+# OrbitForge Desktop
 
 Desktop app target for:
 

@@ -1,10 +1,10 @@
 {
-  "name": "codeorbit-desktop",
+  "name": "orbitforge-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Cross-platform desktop app for CodeOrbit.",
+  "description": "Cross-platform desktop app for OrbitForge.",
   "license": "UNLICENSED",
-  "author": "CodeOrbit contributors",
+  "author": "OrbitForge contributors",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p . && node scripts/copy-renderer.mjs",
@@ -15,8 +15,8 @@
     "package:linux": "npm run build && electron-builder --linux"
   },
   "build": {
-    "appId": "com.forgestudio.codeorbit",
-    "productName": "CodeOrbit",
+    "appId": "dev.orbitforge.desktop",
+    "productName": "OrbitForge",
     "files": [
       "dist/**/*",
       "package.json"

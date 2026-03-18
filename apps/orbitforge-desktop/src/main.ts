@@ -36,7 +36,7 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('talent:run', async (_event, requestPayload) => {
   const { provider, model, baseUrl, apiKey, prompt, workspaceContext } = requestPayload as Record<string, string>
-  const systemPrompt = `You are CodeOrbit AI, a release-ready software engineer.
+  const systemPrompt = `You are OrbitForge, a release-ready software engineer.
 Always return:
 1. A concise plan.
 2. The implementation approach.

@@ -1,7 +1,7 @@
 {
-  "name": "codeorbit-vscode",
-  "displayName": "CodeOrbit AI",
-  "description": "AI coding workspace for Ollama, LM Studio, Anthropic, OpenAI, and compatible endpoints.",
+  "name": "orbitforge-vscode",
+  "displayName": "OrbitForge",
+  "description": "OrbitForge coding workspace for Ollama, LM Studio, Anthropic, OpenAI, and compatible endpoints.",
   "version": "0.1.0",
   "publisher": "forgestudio",
   "license": "UNLICENSED",
@@ -13,46 +13,46 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:codeOrbit.openPanel",
-    "onCommand:codeOrbit.explainSelection",
-    "onCommand:codeOrbit.generateFromWorkspace"
+    "onCommand:orbitforge.openPanel",
+    "onCommand:orbitforge.explainSelection",
+    "onCommand:orbitforge.generateFromWorkspace"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "codeOrbit.openPanel",
-        "title": "CodeOrbit AI: Open Panel"
+        "command": "orbitforge.openPanel",
+        "title": "OrbitForge: Open Panel"
       },
       {
-        "command": "codeOrbit.explainSelection",
-        "title": "CodeOrbit AI: Explain Selection"
+        "command": "orbitforge.explainSelection",
+        "title": "OrbitForge: Explain Selection"
       },
       {
-        "command": "codeOrbit.generateFromWorkspace",
-        "title": "CodeOrbit AI: Plan From Workspace"
+        "command": "orbitforge.generateFromWorkspace",
+        "title": "OrbitForge: Plan From Workspace"
       }
     ],
     "configuration": {
-      "title": "CodeOrbit AI",
+      "title": "OrbitForge",
       "properties": {
-        "codeOrbit.provider": {
+        "orbitforge.provider": {
           "type": "string",
           "default": "ollama",
           "enum": ["ollama", "lmstudio", "openai", "anthropic", "openrouter", "openai-compatible"],
-          "description": "Active provider for CodeOrbit."
+          "description": "Active provider for OrbitForge."
         },
-        "codeOrbit.baseUrl": {
+        "orbitforge.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
           "description": "Provider base URL. Use http://localhost:1234/v1 for LM Studio."
         },
-        "codeOrbit.model": {
+        "orbitforge.model": {
           "type": "string",
           "default": "deepseek-coder:33b",
           "description": "Default model identifier."
         },
-        "codeOrbit.apiKey": {
+        "orbitforge.apiKey": {
           "type": "string",
           "default": "",
           "description": "Optional API key for hosted providers."

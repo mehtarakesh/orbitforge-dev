@@ -1,6 +1,6 @@
-# CodeOrbit AI
+# OrbitForge
 
-CodeOrbit AI is the public product repo for the cross-platform developer surfaces:
+OrbitForge is the public product repo for the cross-platform developer surfaces behind `orbitforge.dev`:
 
 - VS Code extension
 - Desktop app
@@ -12,9 +12,9 @@ The `apps/web` product has been removed from this public repository for now.
 
 This public repo currently includes:
 
-- `apps/codeorbit-ai-vscode`
-- `apps/codeorbit-ai-desktop`
-- `apps/codeorbit-ai-cli`
+- `apps/orbitforge-vscode`
+- `apps/orbitforge-desktop`
+- `apps/orbitforge-cli`
 
 This public repo currently does not include:
 
@@ -46,16 +46,16 @@ npm run package:cli
 
 ### VS Code Extension
 
-Located in `apps/codeorbit-ai-vscode`.
+Located in `apps/orbitforge-vscode`.
 
 ### Desktop App
 
-Located in `apps/codeorbit-ai-desktop`.
+Located in `apps/orbitforge-desktop`.
 
 ### CLI
 
-Located in `apps/codeorbit-ai-cli`.
+Located in `apps/orbitforge-cli`.
 
 ## Note
 
-The web product was intentionally removed from the public GitHub repository. If and when it returns, it can be restored from a private local backup or a private source repo.
+The hosted web product for `orbitforge.dev` was intentionally removed from the public GitHub repository. If and when it returns, it can be restored from a private local backup or a private source repo.

@@ -10,7 +10,7 @@ type TalentSettings = {
 }
 
 function getSettings(): TalentSettings {
-  const config = vscode.workspace.getConfiguration('codeOrbit')
+  const config = vscode.workspace.getConfiguration('orbitforge')
   return {
     provider: config.get<ProviderId>('provider', 'ollama'),
     baseUrl: config.get<string>('baseUrl', 'http://localhost:11434'),
@@ -28,7 +28,7 @@ async function requestTalent(prompt: string, contextText: string, settings = get
     {
       role: 'system',
       content:
-        'You are CodeOrbit AI, a release-ready coding assistant. Return a plan, implementation approach, validation, and risks.',
+        'You are OrbitForge, a release-ready coding assistant. Return a plan, implementation approach, validation, and risks.',
     },
     {
       role: 'user',
@@ -47,7 +47,7 @@ async function requestTalent(prompt: string, contextText: string, settings = get
         model: settings.model,
         max_tokens: 2400,
         system:
-          'You are CodeOrbit AI, a release-ready coding assistant. Return a plan, implementation approach, validation, and risks.',
+          'You are OrbitForge, a release-ready coding assistant. Return a plan, implementation approach, validation, and risks.',
         messages: messagePayload.filter((entry) => entry.role !== 'system'),
       }),
     })
@@ -115,7 +115,7 @@ async function collectWorkspaceSummary() {
   return lines || 'No workspace files found.'
 }
 
-function renderPanel(webview: vscode.Webview, output = 'Prompt CodeOrbit AI from the panel.') {
+function renderPanel(webview: vscode.Webview, output = 'Prompt OrbitForge from the panel.') {
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -131,7 +131,7 @@ function renderPanel(webview: vscode.Webview, output = 'Prompt CodeOrbit AI from
     </style>
   </head>
   <body>
-    <div class="meta">CodeOrbit AI</div>
+    <div class="meta">OrbitForge</div>
     <h2>Model-agnostic coding panel</h2>
     <textarea id="prompt">Review the active workspace and produce a plan, implementation strategy, validation steps, and risks.</textarea>
     <button id="run">Run Prompt</button>
@@ -156,8 +156,8 @@ function renderPanel(webview: vscode.Webview, output = 'Prompt CodeOrbit AI from
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  const openPanelCommand = vscode.commands.registerCommand('codeOrbit.openPanel', async () => {
-    const panel = vscode.window.createWebviewPanel('codeOrbit', 'CodeOrbit AI', vscode.ViewColumn.Beside, {
+  const openPanelCommand = vscode.commands.registerCommand('orbitforge.openPanel', async () => {
+    const panel = vscode.window.createWebviewPanel('orbitforge', 'OrbitForge', vscode.ViewColumn.Beside, {
       enableScripts: true,
     })
 
@@ -176,7 +176,7 @@ export function activate(context: vscode.ExtensionContext) {
         } catch (error) {
           panel.webview.postMessage({
             type: 'result',
-            output: error instanceof Error ? error.message : 'Talent request failed.',
+            output: error instanceof Error ? error.message : 'OrbitForge request failed.',
           })
         }
       },
@@ -185,7 +185,7 @@ export function activate(context: vscode.ExtensionContext) {
     )
   })
 
-  const explainSelectionCommand = vscode.commands.registerCommand('codeOrbit.explainSelection', async () => {
+  const explainSelectionCommand = vscode.commands.registerCommand('orbitforge.explainSelection', async () => {
     const editor = vscode.window.activeTextEditor
 
     if (!editor) {
@@ -205,11 +205,11 @@ export function activate(context: vscode.ExtensionContext) {
       const doc = await vscode.workspace.openTextDocument({ content: output, language: 'markdown' })
       await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside)
     } catch (error) {
-      vscode.window.showErrorMessage(error instanceof Error ? error.message : 'Talent request failed.')
+      vscode.window.showErrorMessage(error instanceof Error ? error.message : 'OrbitForge request failed.')
     }
   })
 
-  const generateFromWorkspaceCommand = vscode.commands.registerCommand('codeOrbit.generateFromWorkspace', async () => {
+  const generateFromWorkspaceCommand = vscode.commands.registerCommand('orbitforge.generateFromWorkspace', async () => {
     try {
       const summary = await collectWorkspaceSummary()
       const output = await requestTalent(
@@ -219,7 +219,7 @@ export function activate(context: vscode.ExtensionContext) {
       const doc = await vscode.workspace.openTextDocument({ content: output, language: 'markdown' })
       await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside)
     } catch (error) {
-      vscode.window.showErrorMessage(error instanceof Error ? error.message : 'Talent request failed.')
+      vscode.window.showErrorMessage(error instanceof Error ? error.message : 'OrbitForge request failed.')
     }
   })
 

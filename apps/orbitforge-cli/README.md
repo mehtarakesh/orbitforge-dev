@@ -1,11 +1,11 @@
-# CodeOrbit AI CLI
+# OrbitForge CLI
 
 Cross-platform CLI for macOS, Linux, and Windows.
 
 ## Usage
 
 ```bash
-codeorbit --provider ollama --model deepseek-coder:33b --prompt "Plan the next patch"
+orbitforge --provider ollama --model deepseek-coder:33b --prompt "Plan the next patch"
 ```
 
 ## Supported providers
