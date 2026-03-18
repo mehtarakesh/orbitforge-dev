@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { decodeSessionCapsule, encodeSessionCapsule, type SessionCapsule } from '@/lib/talent/advanced'
 import { innovationFeatureCards, providerCatalog, releaseChecklist } from '@/lib/talent/catalog'
 import { buildBlastRadius, buildOpsSuggestion, buildReleaseContract, buildShipMemo } from '@/lib/talent/innovation'
+import { buildMissionLock, evaluateProofGate } from '@/lib/talent/mission-lock'
 import type { PreflightAssessment } from '@/lib/talent/preflight'
 
 type ProviderRecord = {
@@ -227,6 +228,11 @@ export function TalentWorkbench() {
 
   const releaseContract = useMemo(() => buildReleaseContract(prompt, workspaceContext), [prompt, workspaceContext])
   const blastRadius = useMemo(() => buildBlastRadius(prompt, workspaceContext), [prompt, workspaceContext])
+  const missionLock = useMemo(
+    () => preflight?.missionLock || buildMissionLock(prompt, workspaceContext, releaseContract, blastRadius),
+    [blastRadius, preflight?.missionLock, prompt, releaseContract, workspaceContext]
+  )
+  const proofGate = useMemo(() => evaluateProofGate(missionLock, result?.output), [missionLock, result?.output])
   const shipMemo = useMemo(
     () => buildShipMemo(prompt, provider, model, releaseContract, blastRadius, result?.output),
     [blastRadius, model, prompt, provider, releaseContract, result?.output]
@@ -529,6 +535,94 @@ export function TalentWorkbench() {
                 ))}
               </ul>
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-sky-300">Mission Lock</p>
+          <div className="mt-4 space-y-4 text-sm text-slate-200">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">{missionLock.northStar}</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Immutable Constraints</p>
+              <ul className="mt-3 space-y-2">
+                {missionLock.immutableConstraints.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Non-Goals</p>
+                <ul className="mt-3 space-y-2">
+                  {missionLock.nonGoals.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Proof Requirements</p>
+                <ul className="mt-3 space-y-2">
+                  {missionLock.proofRequirements.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            {missionLock.driftRisks.length ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Drift Risks</p>
+                <ul className="mt-3 space-y-2">
+                  {missionLock.driftRisks.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-lime-300">Proof Gate</p>
+          <div className="mt-4 space-y-4 text-sm text-slate-200">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Trust Score</p>
+              <div className="mt-3 flex items-center gap-3">
+                <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.25em] text-white">
+                  {proofGate.status}
+                </span>
+                <span className="text-3xl font-semibold text-white">{proofGate.trustScore}</span>
+              </div>
+              <p className="mt-3">{proofGate.nextAction}</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Supported Claims</p>
+                <ul className="mt-3 space-y-2">
+                  {proofGate.supportedClaims.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                {!proofGate.supportedClaims.length ? <p className="mt-3 text-slate-300">No proof-backed claims yet.</p> : null}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Missing Evidence</p>
+                <ul className="mt-3 space-y-2">
+                  {proofGate.missingEvidence.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            {proofGate.unsupportedClaims.length ? (
+              <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-rose-200">Unsupported Claims</p>
+                <ul className="mt-3 space-y-2 text-rose-100">
+                  {proofGate.unsupportedClaims.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
 

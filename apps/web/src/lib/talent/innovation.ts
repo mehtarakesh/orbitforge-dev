@@ -45,6 +45,20 @@ export const innovationFeatures: InnovationFeature[] = [
     implementation: 'Auto-generated contract cards built from prompt intent and workspace context.',
   },
   {
+    id: 'mission-lock',
+    name: 'Mission Lock',
+    painPoint: 'The biggest hidden failure in AI coding is silent intent drift: the original non-negotiables disappear as soon as the workflow gets iterative.',
+    outcome: 'Lock the north star, immutable constraints, non-goals, and proof requirements before generation so the system cannot quietly drift away from the real assignment.',
+    implementation: 'A mission-lock engine that derives non-negotiables and proof requirements from the prompt, workspace, release contract, and blast radius.',
+  },
+  {
+    id: 'proof-gate',
+    name: 'Proof Gate',
+    painPoint: 'Humans often accept polished answers that sound done even when no proof was provided.',
+    outcome: 'Score whether the output is evidence-backed, flag unsupported completion claims, and show exactly what proof is still missing.',
+    implementation: 'An output trust gate that compares generated answers against the locked mission and required proof requirements.',
+  },
+  {
     id: 'release-gate',
     name: 'Release Gate Preflight',
     painPoint: 'Most AI coding tools let risky runs start before teams know whether auth, context, or validation plans are actually ready.',

@@ -15,6 +15,7 @@ describe('buildPreflightAssessment', () => {
     expect(assessment.checks.find((check) => check.id === 'auth')?.status).toBe('blocked')
     expect(assessment.summary).toContain('Preflight blocked')
     expect(assessment.hiddenPainAnalysis.faultlines.some((faultline) => faultline.title === 'Silent auth failure risk')).toBe(true)
+    expect(assessment.missionLock.proofRequirements.length).toBeGreaterThan(0)
   })
 
   it('keeps local providers runnable and recommends a jury for high-risk changes', () => {

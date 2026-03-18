@@ -81,6 +81,10 @@ export const featureColumns = [
     detail: 'Turn prompts into explicit acceptance criteria and public-facing rollout notes in the same session.',
   },
   {
+    title: 'Mission Lock + Proof Gate',
+    detail: 'Freeze non-negotiables and verify that outputs are evidence-backed instead of only sounding complete.',
+  },
+  {
     title: 'Release Gate Preflight',
     detail: 'Score readiness, catch missing credentials or weak workspace context, and stop unsafe runs before they start.',
   },
@@ -106,6 +110,14 @@ export const innovationFeatureCards: InnovationFeatureCard[] = [
   {
     title: 'Release Contract Generator',
     detail: 'Transforms vague prompts into deliverables, validations, and rollback clauses that reviewers can enforce.',
+  },
+  {
+    title: 'Mission Lock',
+    detail: 'Locks the north star, immutable constraints, non-goals, and proof requirements so silent intent drift is visible and preventable.',
+  },
+  {
+    title: 'Proof Gate',
+    detail: 'Scores whether model output is trustworthy, flags unsupported completion claims, and shows the missing evidence.',
   },
   {
     title: 'Release Gate Preflight',
@@ -184,6 +196,18 @@ export const comparisonRows = [
   },
   {
     feature: 'Preflight release gate before model execution',
+    claudeCode: 'No',
+    openConsole: 'No',
+    talent: 'Yes',
+  },
+  {
+    feature: 'Intent drift prevention through mission locking',
+    claudeCode: 'No',
+    openConsole: 'No',
+    talent: 'Yes',
+  },
+  {
+    feature: 'Proof-backed trust scoring for model output',
     claudeCode: 'No',
     openConsole: 'No',
     talent: 'Yes',
@@ -291,7 +315,22 @@ export const docsSections = [
   {
     id: 'signature-features',
     title: 'Signature Features',
-    body: 'The current public-share build centers on release-safe intelligence: Model Jury, Blast Radius Simulator, Release Contract Generator, Release Gate Preflight, Hidden Pain Detector, Session Capsule, Auto-Heal Recovery Lanes, Ops Ledger, and Ship Memo Autowriter.',
+    body: 'The current public-share build centers on release-safe intelligence: Mission Lock, Proof Gate, Model Jury, Blast Radius Simulator, Release Contract Generator, Release Gate Preflight, Hidden Pain Detector, Session Capsule, Auto-Heal Recovery Lanes, Ops Ledger, and Ship Memo Autowriter.',
+  },
+  {
+    id: 'revolutionary-problem',
+    title: 'Revolutionary Problem',
+    body: 'CodeOrbit AI is designed to solve silent intent drift and false completion confidence. The workflow locks the real assignment before generation and scores whether the resulting answer is actually evidence-backed.',
+  },
+  {
+    id: 'mission-lock',
+    title: 'Mission Lock',
+    body: 'Mission Lock freezes the north star, immutable constraints, non-goals, and proof requirements before generation so the workflow cannot quietly drift away from what the human actually asked for.',
+  },
+  {
+    id: 'proof-gate',
+    title: 'Proof Gate',
+    body: 'Proof Gate checks whether an answer is evidence-backed or merely polished. It lowers trust when output makes completion claims without build, test, validation, or rollout proof.',
   },
   {
     id: 'release-gate',

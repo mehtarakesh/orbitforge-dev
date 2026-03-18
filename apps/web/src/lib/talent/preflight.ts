@@ -1,5 +1,6 @@
 import { buildHiddenPainAnalysis, buildRecoveryLanes, type HiddenPainAnalysis, type RecoveryLane } from '@/lib/talent/advanced'
 import { buildBlastRadius, buildOpsSuggestion, buildReleaseContract, type BlastRadius, type ReleaseContract } from '@/lib/talent/innovation'
+import { buildMissionLock, type MissionLock } from '@/lib/talent/mission-lock'
 import { normalizeBaseUrl, type ProviderId } from '@/lib/talent/provider-client'
 
 export type PreflightCheck = {
@@ -22,6 +23,7 @@ export type PreflightAssessment = {
   summary: string
   releaseContract: ReleaseContract
   blastRadius: BlastRadius
+  missionLock: MissionLock
   checks: PreflightCheck[]
   juryRecommendation: JuryRecommendation[]
   hiddenPainAnalysis: HiddenPainAnalysis
@@ -183,6 +185,7 @@ export function buildPreflightAssessment(input: PreflightInput): PreflightAssess
   const normalizedBaseUrl = normalizeBaseUrl(input.provider, input.baseUrl)
   const releaseContract = buildReleaseContract(input.prompt, input.workspaceContext || '')
   const blastRadius = buildBlastRadius(input.prompt, input.workspaceContext || '')
+  const missionLock = buildMissionLock(input.prompt, input.workspaceContext || '', releaseContract, blastRadius)
   const checks = buildChecks(input, blastRadius, normalizedBaseUrl)
   const gate = classifyCheckStatus(checks)
   const warningPenalty = checks.filter((check) => check.status === 'warning').length * 8
@@ -226,6 +229,7 @@ export function buildPreflightAssessment(input: PreflightInput): PreflightAssess
     summary,
     releaseContract,
     blastRadius,
+    missionLock,
     checks,
     juryRecommendation,
     hiddenPainAnalysis,

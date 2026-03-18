@@ -16,7 +16,7 @@ It is designed to keep teams out of vendor lock-in while still supporting the fa
 - `Desktop app`: Electron shell for macOS, Windows, Linux
 - `CLI`: cross-platform `codeorbit` binary
 - `Providers`: Ollama, LM Studio, OpenAI, Anthropic, OpenRouter, OpenAI-compatible
-- `Release layer`: preflight gate, blast radius, release contract, model jury, hidden pain detector, auto-heal recovery, session capsule, ops ledger, ship memo
+- `Release layer`: mission lock, proof gate, preflight gate, blast radius, release contract, model jury, hidden pain detector, auto-heal recovery, session capsule, ops ledger, ship memo
 
 ## Install Matrix
 
@@ -39,7 +39,82 @@ CodeOrbit AI is organized as one release-focused product family:
 
 Request flow:
 
-`Prompt -> Release Gate Preflight + Hidden Pain Detector -> Release Contract + Blast Radius -> Primary Run / Auto-Heal Recovery / Model Jury -> Ops Ledger -> Session Capsule + Ship Memo`
+`Prompt -> Mission Lock + Release Gate Preflight + Hidden Pain Detector -> Proof Requirements + Blast Radius -> Primary Run / Auto-Heal Recovery / Model Jury -> Proof Gate -> Ops Ledger -> Session Capsule + Ship Memo`
+
+## The Revolutionary Problem This Repo Solves
+
+The biggest unsolved problem in AI coding is not raw model quality.
+
+It is this:
+
+`Humans lose control of the original assignment once the workflow becomes iterative.`
+
+That failure shows up as:
+
+- silent intent drift
+- polished but unproven answers
+- users re-explaining the same constraints across tools
+- teams trusting “done” language without real proof
+
+CodeOrbit AI is built to solve that workflow failure directly through `Mission Lock` and `Proof Gate`.
+
+### Mission Lock
+
+Mission Lock freezes:
+
+- the true north-star objective
+- immutable constraints
+- non-goals
+- proof requirements
+
+So the system does not quietly drift away from the real assignment as the run evolves.
+
+### Proof Gate
+
+Proof Gate checks whether the output is:
+
+- evidence-backed
+- missing validation
+- making unsupported completion claims
+- safe enough for human review
+
+So the user stops rewarding confident-sounding answers that have no proof behind them.
+
+### Why this is revolutionary
+
+Most tools optimize for generating an answer.
+
+CodeOrbit AI optimizes for preserving the original human intent and measuring whether the answer is trustworthy.
+
+That changes the role of the tool from:
+
+- “generate something helpful”
+
+to:
+
+- “protect the assignment from drift and refuse to confuse confidence with completion”
+
+### Example
+
+Prompt:
+
+`Ship a fast release for web, docs, and pricing without breaking local-provider support.`
+
+What CodeOrbit AI does differently:
+
+1. `Mission Lock` freezes:
+   - keep local-provider support
+   - update web, docs, and pricing together
+   - do not call this done without proof
+2. `Hidden Pain Detector` warns that “fast release” conflicts with a multi-surface blast radius
+3. `Proof Gate` will reject output that says “production-ready” without build, smoke-check, or validation evidence
+4. `Auto-Heal Recovery` can recover if the chosen provider lane fails
+
+The result:
+
+- the assignment stays intact
+- the user sees hidden contradictions early
+- output is judged by proof, not tone
 
 ## Why This Is The Better Option
 
@@ -178,6 +253,32 @@ How CodeOrbit AI handles it:
 Why this changes everything:
 - The tool starts reducing human orchestration load, not just generating text.
 
+### Hidden pain point: teams forget that the original task is the first thing to get corrupted
+
+What usually happens:
+- The first prompt contains the real intent.
+- A few iterations later, the workflow is now optimizing for what the model last said, not what the human originally needed.
+
+How CodeOrbit AI handles it:
+- `Mission Lock` freezes the original assignment into a reusable structure.
+- The workbench shows immutable constraints, non-goals, proof requirements, and drift risks before generation.
+
+Why this changes everything:
+- The system becomes accountable to the assignment, not just to the latest response.
+
+### Hidden pain point: polished language tricks humans into trusting unfinished work
+
+What usually happens:
+- An answer sounds complete because it says things like “implemented”, “fixed”, or “production-ready”.
+- The team moves forward before anyone notices the proof is missing.
+
+How CodeOrbit AI handles it:
+- `Proof Gate` scores trust, flags unsupported completion claims, and lists the missing evidence.
+- This creates a visible difference between “well-written output” and “proven output”.
+
+Why this changes everything:
+- It directly attacks the false-confidence loop that makes AI coding dangerous.
+
 ### Hidden pain point: switching tools destroys momentum more than model quality does
 
 What usually happens:
@@ -208,31 +309,37 @@ Why this changes everything:
 
 These are the headline features this repo now centers on for public differentiation:
 
-1. `Model Jury`
+1. `Mission Lock`
+Freeze the true assignment into immutable constraints, non-goals, and proof requirements before the run can drift.
+
+2. `Proof Gate`
+Score whether the output is actually evidence-backed and reject confident but unsupported completion language.
+
+3. `Model Jury`
 Run the same task across multiple model ballots and compare disagreement, speed, and output quality before committing to a risky path.
 
-2. `Blast Radius Simulator`
+4. `Blast Radius Simulator`
 Estimate which surfaces a change will hit and where validation effort needs to go before code generation starts.
 
-3. `Release Contract Generator`
+5. `Release Contract Generator`
 Turn prompts into explicit deliverables, validations, and rollback clauses instead of relying on implied acceptance criteria.
 
-4. `Release Gate Preflight`
+6. `Release Gate Preflight`
 Score readiness before generation, block unsafe runs, recommend jury members, and generate a recovery playbook before the first risky request leaves the app.
 
-5. `Ops Ledger`
+7. `Ops Ledger`
 Track run history, failures, and next-step recovery guidance so the tool gets better after failed attempts instead of just erroring out.
 
-6. `Ship Memo Autowriter`
+8. `Ship Memo Autowriter`
 Generate public-facing rollout notes, README snippets, and launch summaries directly from the working session.
 
-7. `Hidden Pain Detector`
+9. `Hidden Pain Detector`
 Find contradictions, missing assumptions, invisible coordination costs, and unspoken proof gaps before they sabotage the run.
 
-8. `Session Capsule`
+10. `Session Capsule`
 Carry the same run across web, desktop, CLI, and editor surfaces without rebuilding context by hand.
 
-9. `Auto-Heal Recovery Lanes`
+11. `Auto-Heal Recovery Lanes`
 Keep fallback provider paths ready so the system can recover from missing-model, auth, network, or compatibility failures.
 
 ## Comparison
@@ -248,6 +355,8 @@ The Claude Code benchmark is based on Anthropic's public Claude Code documentati
 | Desktop app target | No | Usually no | Yes |
 | CLI target | Partial | Usually no | Yes |
 | Release-oriented docs and download center | No | No | Yes |
+| Intent drift prevention through mission locking | No | No | Yes |
+| Proof-backed trust scoring for model output | No | No | Yes |
 | Preflight release gate before model execution | No | No | Yes |
 | Hidden contradiction and missing-context detection | No | No | Yes |
 | Portable session continuity across surfaces | Partial | No | Yes |
@@ -415,7 +524,7 @@ Successful checks:
 - `npm run build:desktop`
 - `npm run build:cli`
 - Web smoke checks for `/api/talent/providers`, `/api/talent/preflight`, and the auto-heal chat route
-- 12 passing unit tests for provider helpers, release heuristics, hidden pain analysis, session capsules, and recovery planning
+- 15 passing unit tests for provider helpers, release heuristics, hidden pain analysis, mission locking, proof gating, session capsules, and recovery planning
 
 This publish repo contains the source-ready product surfaces and the root workspace manifest needed to build them together.
 
