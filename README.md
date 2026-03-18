@@ -27,6 +27,23 @@ It is designed to keep teams out of vendor lock-in while still supporting the fa
 | Desktop | Ready | `npm run build:desktop` | Package on target OS for final installers |
 | CLI | Ready | `npm run build:cli` | Cross-platform Node CLI |
 
+## Hosted Website And Deployment
+
+- Public domain target: `https://codeorbit-ai.dev`
+- Best free hosting path for the Next.js web app: `Vercel Hobby`
+- Vercel project root: `apps/web`
+- Public smoke endpoint: `/api/health`
+- Public routes included in the deploy: `/`, `/app`, `/features`, `/docs`, `/deploy`, `/pricing`, `/download`, `/status`, `/evidence`
+
+Recommended launch flow:
+
+1. `npm install`
+2. `npm run test:web`
+3. `npm run build:web`
+4. Import the repo into Vercel with `apps/web` as the root directory
+5. Set `NEXT_PUBLIC_SITE_URL=https://codeorbit-ai.dev`
+6. Attach `codeorbit-ai.dev` in Vercel Domains and complete DNS verification
+
 ## Architecture
 
 CodeOrbit AI is organized as one release-focused product family:

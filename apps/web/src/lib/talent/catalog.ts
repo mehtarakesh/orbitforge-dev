@@ -387,6 +387,11 @@ export const docsSections = [
     body: 'Use native Ollama for localhost 11434, LM Studio for localhost 1234/v1, or any OpenAI-compatible endpoint. Anthropic support uses the native Messages API path.',
   },
   {
+    id: 'hosting',
+    title: 'Hosting',
+    body: 'Deploy the public website and workbench on Vercel Hobby with `apps/web` as the project root, then attach `codeorbit-ai.dev` as the canonical domain.',
+  },
+  {
     id: 'vscode-extension',
     title: 'VS Code Extension',
     body: 'Install dependencies at the repo root, run the extension build script, then package with VSCE for distribution. The extension exposes panel, selection, and workspace commands.',

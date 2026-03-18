@@ -1,126 +1,131 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+type LocalProfile = {
+  name?: string
+  email: string
+  team?: string
+}
+
+const storageKey = 'codeorbit-ai-profile'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [team, setTeam] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [knownProfile, setKnownProfile] = useState<LocalProfile | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  useEffect(() => {
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) {
+      return
+    }
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const parsed = JSON.parse(raw) as LocalProfile
+      setKnownProfile(parsed)
+      setEmail(parsed.email || '')
+      setTeam(parsed.team || '')
+    } catch {
+      window.localStorage.removeItem(storageKey)
+    }
+  }, [])
 
-      const data = await res.json();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setError('')
+    setLoading(true)
 
-      if (!res.ok) {
-        throw new Error(data.detail || 'Login failed');
+    try {
+      if (!email.trim()) {
+        throw new Error('Use the email address tied to this browser profile.')
       }
 
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('user', JSON.stringify({ email }));
+      const profile: LocalProfile = {
+        ...(knownProfile || {}),
+        email: email.trim(),
+        team: team.trim(),
+      }
 
-      const userRes = await fetch(`${API_URL}/api/v1/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${data.access_token}`,
-        },
-      });
-      const userData = await userRes.json();
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      window.localStorage.setItem(storageKey, JSON.stringify(profile))
+      window.localStorage.setItem('codeorbit-ai-session', JSON.stringify({ email: profile.email, signedInAt: new Date().toISOString() }))
+      router.push('/app')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not restore your session.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-      <div className="card w-full max-w-md">
-        <div className="card-header text-center">
-          <div className="mx-auto w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            <span className="text-white font-bold text-xl">F</span>
-          </div>
-          <h1 className="card-title">Welcome back</h1>
-          <p className="card-description">Sign in to your ForgeStudio account</p>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_26%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)] px-4 py-14 text-white">
+      <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-[2rem] border border-white/10 bg-slate-950/80 p-8">
+          <p className="text-sm uppercase tracking-[0.3em] text-cyan-300">Resume your workspace</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight">Sign in restores your local browser profile.</h1>
+          <p className="mt-5 text-sm leading-7 text-slate-300">
+            CodeOrbit AI is local-first. For the hosted public site, “sign in” restores the browser profile you use to
+            store preferences before jumping back into the workbench.
+          </p>
+          {knownProfile ? (
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-200">
+              <p className="font-semibold text-white">Existing profile found</p>
+              <p className="mt-2">{knownProfile.email}</p>
+              {knownProfile.team ? <p className="text-slate-400">{knownProfile.team}</p> : null}
+            </div>
+          ) : null}
         </div>
-        
-        <div className="card-content">
-          {error && (
-            <div className="alert alert-error mb-4">
-              {error}
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="label">Email</label>
+        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error ? <div className="rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-100">{error}</div> : null}
+            <div>
+              <label htmlFor="email" className="text-sm text-slate-300">
+                Work email
+              </label>
               <input
+                id="email"
                 type="email"
-                className="input"
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50"
+                placeholder="you@company.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                onChange={(event) => setEmail(event.target.value)}
                 required
               />
             </div>
-            
-            <div className="form-group">
-              <label className="label">Password</label>
+            <div>
+              <label htmlFor="team" className="text-sm text-slate-300">
+                Team or workspace
+              </label>
               <input
-                type="password"
-                className="input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
+                id="team"
+                type="text"
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50"
+                placeholder="Platform Engineering"
+                value={team}
+                onChange={(event) => setTeam(event.target.value)}
               />
             </div>
-            
             <button
               type="submit"
-              className="btn btn-primary w-full btn-lg"
+              className="inline-flex w-full items-center justify-center rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-70"
               disabled={loading}
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="spinner"></span>
-                  Signing in...
-                </span>
-              ) : (
-                'Sign in'
-              )}
+              {loading ? 'Restoring...' : 'Open workbench'}
             </button>
           </form>
-        </div>
-        
-        <div className="card-footer text-center">
-          <p className="text-sm text-muted">
-            Do not have an account?{' '}
-            <Link href="/register" style={{ color: '#667eea', fontWeight: 500 }}>
-              Sign up
+          <p className="mt-6 text-sm text-slate-400">
+            Need a fresh browser profile?{' '}
+            <Link href="/register" className="text-cyan-200 hover:text-white">
+              Create one
             </Link>
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }
