@@ -1,3 +1,4 @@
+import { buildHiddenPainAnalysis, buildRecoveryLanes, type HiddenPainAnalysis, type RecoveryLane } from '@/lib/talent/advanced'
 import { buildBlastRadius, buildOpsSuggestion, buildReleaseContract, type BlastRadius, type ReleaseContract } from '@/lib/talent/innovation'
 import { normalizeBaseUrl, type ProviderId } from '@/lib/talent/provider-client'
 
@@ -23,6 +24,8 @@ export type PreflightAssessment = {
   blastRadius: BlastRadius
   checks: PreflightCheck[]
   juryRecommendation: JuryRecommendation[]
+  hiddenPainAnalysis: HiddenPainAnalysis
+  recoveryPlan: RecoveryLane[]
   opsPlaybook: string[]
 }
 
@@ -186,6 +189,25 @@ export function buildPreflightAssessment(input: PreflightInput): PreflightAssess
   const blockedPenalty = checks.filter((check) => check.status === 'blocked').length * 25
   const readinessScore = Math.max(0, Math.min(100, 100 - warningPenalty - blockedPenalty - Math.floor(blastRadius.score / 5)))
   const juryRecommendation = buildJuryRecommendation(input, blastRadius)
+  const hiddenPainAnalysis = buildHiddenPainAnalysis({
+    provider: input.provider,
+    model: input.model,
+    baseUrl: normalizedBaseUrl,
+    prompt: input.prompt,
+    workspaceContext: input.workspaceContext,
+    checks,
+    releaseContract,
+    blastRadius,
+  })
+  const recoveryPlan = buildRecoveryLanes({
+    provider: input.provider,
+    model: input.model,
+    baseUrl: normalizedBaseUrl,
+    prompt: input.prompt,
+    workspaceContext: input.workspaceContext,
+    authBlocked: checks.some((check) => check.id === 'auth' && check.status === 'blocked'),
+    blastRadius,
+  })
   const opsPlaybook = buildOpsPlaybook(input, blastRadius, checks)
 
   const summary =
@@ -206,6 +228,8 @@ export function buildPreflightAssessment(input: PreflightInput): PreflightAssess
     blastRadius,
     checks,
     juryRecommendation,
+    hiddenPainAnalysis,
+    recoveryPlan,
     opsPlaybook,
   }
 }

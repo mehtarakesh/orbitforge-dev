@@ -16,7 +16,7 @@ It is designed to keep teams out of vendor lock-in while still supporting the fa
 - `Desktop app`: Electron shell for macOS, Windows, Linux
 - `CLI`: cross-platform `codeorbit` binary
 - `Providers`: Ollama, LM Studio, OpenAI, Anthropic, OpenRouter, OpenAI-compatible
-- `Release layer`: preflight gate, blast radius, release contract, model jury, ops ledger, ship memo
+- `Release layer`: preflight gate, blast radius, release contract, model jury, hidden pain detector, auto-heal recovery, session capsule, ops ledger, ship memo
 
 ## Install Matrix
 
@@ -39,7 +39,7 @@ CodeOrbit AI is organized as one release-focused product family:
 
 Request flow:
 
-`Prompt -> Release Gate Preflight -> Release Contract + Blast Radius -> Primary Run / Model Jury -> Ops Ledger -> Ship Memo`
+`Prompt -> Release Gate Preflight + Hidden Pain Detector -> Release Contract + Blast Radius -> Primary Run / Auto-Heal Recovery / Model Jury -> Ops Ledger -> Session Capsule + Ship Memo`
 
 ## Why This Is The Better Option
 
@@ -161,6 +161,49 @@ How CodeOrbit AI solves it:
 Why that matters:
 - The repo is easier to share publicly and easier to explain internally.
 
+## Deep Pain Points Most People Miss
+
+These are the more dangerous problems because teams usually do not name them directly.
+
+### Hidden pain point: humans are carrying invisible coordination work in their heads
+
+What usually happens:
+- The prompt sounds clear to the author, but it quietly depends on missing repo context, unstated owners, and invisible release tasks.
+- When the output goes wrong, people say “the model was bad” even though the actual failure was hidden human context.
+
+How CodeOrbit AI handles it:
+- `Hidden Pain Detector` scores operator burden.
+- It surfaces contradiction-heavy prompts, missing inputs, invisible costs, and faultlines before the run.
+
+Why this changes everything:
+- The tool starts reducing human orchestration load, not just generating text.
+
+### Hidden pain point: switching tools destroys momentum more than model quality does
+
+What usually happens:
+- A good run in the browser does not transfer cleanly to desktop, CLI, or editor workflows.
+- The human manually restates the task, forgets key constraints, and loses continuity.
+
+How CodeOrbit AI handles it:
+- `Session Capsule` packages the exact run state into a portable payload.
+- Another surface can restore the same provider lane, prompt, workspace context, and release status.
+
+Why this changes everything:
+- The workflow becomes continuous across surfaces instead of resetting every time the user changes tools.
+
+### Hidden pain point: provider failure recovery is treated like the user's job
+
+What usually happens:
+- Missing models, auth problems, and network failures push the user into manual retry loops.
+- The human becomes the fallback router.
+
+How CodeOrbit AI handles it:
+- `Auto-Heal Recovery Lanes` prepare safer fallback routes before the run.
+- The chat execution path can recover through alternative lanes when a failure is recoverable.
+
+Why this changes everything:
+- Reliability improves without asking the user to become an expert in provider debugging.
+
 ## Signature Features
 
 These are the headline features this repo now centers on for public differentiation:
@@ -183,6 +226,15 @@ Track run history, failures, and next-step recovery guidance so the tool gets be
 6. `Ship Memo Autowriter`
 Generate public-facing rollout notes, README snippets, and launch summaries directly from the working session.
 
+7. `Hidden Pain Detector`
+Find contradictions, missing assumptions, invisible coordination costs, and unspoken proof gaps before they sabotage the run.
+
+8. `Session Capsule`
+Carry the same run across web, desktop, CLI, and editor surfaces without rebuilding context by hand.
+
+9. `Auto-Heal Recovery Lanes`
+Keep fallback provider paths ready so the system can recover from missing-model, auth, network, or compatibility failures.
+
 ## Comparison
 
 The Claude Code benchmark is based on Anthropic's public Claude Code documentation. `OpenConsole` could not be confidently tied to a single canonical public spec during this pass, so the comparison below uses the common baseline of browser-first multi-provider consoles.
@@ -197,6 +249,9 @@ The Claude Code benchmark is based on Anthropic's public Claude Code documentati
 | CLI target | Partial | Usually no | Yes |
 | Release-oriented docs and download center | No | No | Yes |
 | Preflight release gate before model execution | No | No | Yes |
+| Hidden contradiction and missing-context detection | No | No | Yes |
+| Portable session continuity across surfaces | Partial | No | Yes |
+| Auto-heal provider recovery lanes | Partial | Partial | Yes |
 | Enterprise positioning without single-vendor lock-in | Partial | Partial | Yes |
 
 ## Repo Stats
@@ -359,8 +414,8 @@ Successful checks:
 - `npm run build:extension`
 - `npm run build:desktop`
 - `npm run build:cli`
-- Web smoke checks for `/api/talent/providers` and `/api/talent/preflight`
-- 9 passing unit tests for provider helpers, release heuristics, and preflight gating
+- Web smoke checks for `/api/talent/providers`, `/api/talent/preflight`, and the auto-heal chat route
+- 12 passing unit tests for provider helpers, release heuristics, hidden pain analysis, session capsules, and recovery planning
 
 This publish repo contains the source-ready product surfaces and the root workspace manifest needed to build them together.
 

@@ -52,6 +52,27 @@ export const innovationFeatures: InnovationFeature[] = [
     implementation: 'A preflight API and UI gate that evaluates provider readiness, workspace coverage, release risk, jury recommendations, and fallback playbooks.',
   },
   {
+    id: 'hidden-pain',
+    name: 'Hidden Pain Detector',
+    painPoint: 'Humans often blame the model when the real issue is an unstated contradiction, a missing surface owner, or a release task with no proof expectations.',
+    outcome: 'Expose invisible coordination costs, missing inputs, and contradiction-heavy prompts before they create bad output.',
+    implementation: 'A hidden-pain analysis layer that scores operator burden and surfaces faultlines, invisible costs, and missing inputs in the workbench.',
+  },
+  {
+    id: 'session-capsule',
+    name: 'Session Capsule',
+    painPoint: 'Switching between browser, editor, desktop, and CLI usually destroys momentum because the human has to rebuild context manually.',
+    outcome: 'Carry the exact run state across surfaces as a portable capsule instead of re-explaining the task every time.',
+    implementation: 'Base64-encoded portable session payloads that preserve provider, prompt, workspace context, gate status, and latest output.',
+  },
+  {
+    id: 'auto-heal',
+    name: 'Auto-Heal Recovery Lanes',
+    painPoint: 'Provider failures usually force the human to become the recovery orchestrator.',
+    outcome: 'Prepare fallback execution lanes and recover from auth, network, missing-model, or compatibility failures with less manual intervention.',
+    implementation: 'Recovery-lane planning in preflight plus sequential fallback attempts in the chat route when recoverable errors appear.',
+  },
+  {
     id: 'ops-ledger',
     name: 'Ops Ledger',
     painPoint: 'When a provider fails, developers rarely get a structured next move.',

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
+import { decodeSessionCapsule, encodeSessionCapsule, type SessionCapsule } from '@/lib/talent/advanced'
 import { innovationFeatureCards, providerCatalog, releaseChecklist } from '@/lib/talent/catalog'
 import { buildBlastRadius, buildOpsSuggestion, buildReleaseContract, buildShipMemo } from '@/lib/talent/innovation'
 import type { PreflightAssessment } from '@/lib/talent/preflight'
@@ -19,6 +20,8 @@ type ApiResult = {
   provider: string
   model: string
   baseUrl: string
+  recovered?: boolean
+  attempts?: Array<{ provider: string; model: string; baseUrl: string; ok: boolean; note: string }>
 }
 
 type JuryBallot = {
@@ -52,6 +55,7 @@ export function TalentWorkbench() {
   const [jury, setJury] = useState<{ ballots: JuryBallot[]; synthesis: string } | null>(null)
   const [preflight, setPreflight] = useState<PreflightAssessment | null>(null)
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
+  const [capsuleInput, setCapsuleInput] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -154,11 +158,11 @@ export function TalentWorkbench() {
       setResult(data)
       setLedger((current) => {
         const nextEntry: LedgerEntry = {
-          provider,
-          model,
+          provider: data.provider,
+          model: data.model,
           status: 'success',
           durationMs: Date.now() - startedAt,
-          note: 'Primary run completed successfully.',
+          note: data.recovered ? 'Recovered through an auto-heal fallback lane.' : 'Primary run completed successfully.',
         }
 
         return [nextEntry, ...current].slice(0, 6)
@@ -227,6 +231,33 @@ export function TalentWorkbench() {
     () => buildShipMemo(prompt, provider, model, releaseContract, blastRadius, result?.output),
     [blastRadius, model, prompt, provider, releaseContract, result?.output]
   )
+  const sessionCapsule = useMemo(
+    () =>
+      encodeSessionCapsule({
+        version: 'codeorbit-ai.v1',
+        provider: provider as SessionCapsule['provider'],
+        model,
+        baseUrl,
+        prompt,
+        workspaceContext,
+        readinessScore: preflight?.readinessScore,
+        gate: preflight?.gate,
+        summary: preflight?.summary,
+        output: result?.output,
+        createdAt: new Date().toISOString(),
+      }),
+    [baseUrl, model, preflight?.gate, preflight?.readinessScore, preflight?.summary, prompt, provider, result?.output, workspaceContext]
+  )
+
+  function loadSessionCapsule() {
+    const capsule = decodeSessionCapsule(capsuleInput)
+    setProvider(capsule.provider)
+    setModel(capsule.model)
+    setBaseUrl(capsule.baseUrl)
+    setPrompt(capsule.prompt)
+    setWorkspaceContext(capsule.workspaceContext)
+    setError('')
+  }
 
   return (
     <div className="space-y-8">
@@ -421,6 +452,53 @@ export function TalentWorkbench() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-rose-300">Hidden Pain Detector</p>
+          <div className="mt-4 space-y-4 text-sm text-slate-200">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Operator Burden</p>
+              <p className="mt-2 text-3xl font-semibold text-white">{preflight?.hiddenPainAnalysis.operatorBurdenScore ?? '--'}</p>
+              <p className="mt-3">
+                {preflight
+                  ? 'This score measures how much unstated decision-making the human is still carrying outside the tool.'
+                  : 'Run preflight to surface contradictions, missing assumptions, and invisible coordination costs.'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Faultlines</p>
+              <div className="mt-3 space-y-3">
+                {preflight?.hiddenPainAnalysis.faultlines.map((faultline) => (
+                  <div key={`${faultline.severity}-${faultline.title}`} className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                      {faultline.title} / {faultline.severity}
+                    </p>
+                    <p className="mt-2">{faultline.detail}</p>
+                  </div>
+                ))}
+                {!preflight?.hiddenPainAnalysis.faultlines.length ? <p className="text-slate-300">No hidden faultlines surfaced yet.</p> : null}
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Missing Inputs</p>
+                <ul className="mt-3 space-y-2">
+                  {(preflight?.hiddenPainAnalysis.missingInputs || []).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Invisible Costs</p>
+                <ul className="mt-3 space-y-2">
+                  {(preflight?.hiddenPainAnalysis.invisibleCosts || []).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-fuchsia-300">Release Checklist</p>
           <div className="mt-4 space-y-3">
             {releaseChecklist.map((item) => (
@@ -549,8 +627,49 @@ export function TalentWorkbench() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-sky-300">Session Capsule</p>
+          <p className="mt-3 text-sm text-slate-300">
+            Preserve the exact prompt, provider lane, and release state so another surface can resume without rebuilding context from memory.
+          </p>
+          <textarea
+            readOnly
+            value={sessionCapsule}
+            rows={6}
+            className="mt-4 w-full rounded-3xl border border-white/10 bg-slate-900 px-4 py-3 text-xs text-white"
+          />
+          <textarea
+            value={capsuleInput}
+            onChange={(event) => setCapsuleInput(event.target.value)}
+            rows={5}
+            placeholder="Paste a CodeOrbit session capsule to restore a run."
+            className="mt-4 w-full rounded-3xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                loadSessionCapsule()
+              } catch (capsuleError) {
+                setError(capsuleError instanceof Error ? capsuleError.message : 'Failed to load session capsule.')
+              }
+            }}
+            className="mt-4 rounded-full border border-sky-400/40 px-5 py-3 text-sm text-sky-100 transition hover:border-sky-300 hover:text-white"
+          >
+            Load session capsule
+          </button>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-orange-300">Recovery Playbook</p>
           <div className="mt-4 space-y-3 text-sm text-slate-200">
+            {(preflight?.recoveryPlan || []).map((lane) => (
+              <div key={`${lane.provider}-${lane.model}-${lane.trigger}`} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                  {lane.provider} / {lane.model} / {lane.trigger}
+                </p>
+                <p className="mt-2">{lane.reason}</p>
+              </div>
+            ))}
             {(preflight?.opsPlaybook || []).map((item) => (
               <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                 {item}
@@ -570,6 +689,18 @@ export function TalentWorkbench() {
             <p className="mb-3 text-xs uppercase tracking-[0.3em] text-slate-500">
               {result ? `${result.provider} / ${result.model}` : 'Awaiting run'}
             </p>
+            {result?.attempts?.length ? (
+              <div className="mb-4 space-y-2">
+                {result.attempts.map((attempt) => (
+                  <div key={`${attempt.provider}-${attempt.model}-${attempt.baseUrl}`} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                    <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                      {attempt.provider} / {attempt.model} / {attempt.ok ? 'success' : 'failed'}
+                    </p>
+                    <p className="mt-2">{attempt.note}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap text-sm leading-6 text-slate-100">
               {result?.output || 'Run a prompt to generate plan, implementation notes, validation, and remaining risk sections.'}
             </pre>

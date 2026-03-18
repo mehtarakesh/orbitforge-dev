@@ -84,6 +84,14 @@ export const featureColumns = [
     title: 'Release Gate Preflight',
     detail: 'Score readiness, catch missing credentials or weak workspace context, and stop unsafe runs before they start.',
   },
+  {
+    title: 'Hidden Pain Detector',
+    detail: 'Expose contradictions, unstated assumptions, and invisible coordination costs that humans usually carry in their heads.',
+  },
+  {
+    title: 'Session Capsule + Auto-Heal',
+    detail: 'Resume the same run across surfaces and recover from provider failures without manually rebuilding context.',
+  },
 ]
 
 export const innovationFeatureCards: InnovationFeatureCard[] = [
@@ -102,6 +110,18 @@ export const innovationFeatureCards: InnovationFeatureCard[] = [
   {
     title: 'Release Gate Preflight',
     detail: 'Adds a real release gate with readiness scoring, blocked checks, recommended jury members, and retry playbooks.',
+  },
+  {
+    title: 'Hidden Pain Detector',
+    detail: 'Identifies contradiction-heavy prompts, missing inputs, and invisible release costs before a human blames the model.',
+  },
+  {
+    title: 'Session Capsule',
+    detail: 'Exports the live run state into a portable capsule so the same context can resume across web, desktop, CLI, and editor surfaces.',
+  },
+  {
+    title: 'Auto-Heal Recovery Lanes',
+    detail: 'Prepares fallback provider lanes and can recover the run when auth, network, or missing-model failures happen.',
   },
   {
     title: 'Ops Ledger',
@@ -166,6 +186,24 @@ export const comparisonRows = [
     feature: 'Preflight release gate before model execution',
     claudeCode: 'No',
     openConsole: 'No',
+    talent: 'Yes',
+  },
+  {
+    feature: 'Hidden contradiction and missing-context detection',
+    claudeCode: 'No',
+    openConsole: 'No',
+    talent: 'Yes',
+  },
+  {
+    feature: 'Portable session continuity across surfaces',
+    claudeCode: 'Partial',
+    openConsole: 'No',
+    talent: 'Yes',
+  },
+  {
+    feature: 'Auto-heal provider recovery lanes',
+    claudeCode: 'Partial',
+    openConsole: 'Partial',
     talent: 'Yes',
   },
 ]
@@ -253,12 +291,22 @@ export const docsSections = [
   {
     id: 'signature-features',
     title: 'Signature Features',
-    body: 'The current public-share build centers on five signature features plus a release gate layer: Model Jury, Blast Radius Simulator, Release Contract Generator, Ops Ledger, Ship Memo Autowriter, and Release Gate Preflight.',
+    body: 'The current public-share build centers on release-safe intelligence: Model Jury, Blast Radius Simulator, Release Contract Generator, Release Gate Preflight, Hidden Pain Detector, Session Capsule, Auto-Heal Recovery Lanes, Ops Ledger, and Ship Memo Autowriter.',
   },
   {
     id: 'release-gate',
     title: 'Release Gate Preflight',
     body: 'Before a run starts, the preflight engine scores readiness, validates credentials and endpoint strategy, flags missing workspace context, recommends jury members, and blocks obviously unsafe release attempts.',
+  },
+  {
+    id: 'hidden-pain',
+    title: 'Hidden Pain Detector',
+    body: 'This layer identifies the contradictions humans usually miss: release work without proof, quick prompts hiding large blast radius, docs drift, missing surface ownership, and auth failures that masquerade as model weakness.',
+  },
+  {
+    id: 'continuity',
+    title: 'Session Capsule and Auto-Heal',
+    body: 'CodeOrbit can package the exact run state into a portable capsule and build recovery lanes so the workflow survives surface switches, missing models, auth issues, and compatibility failures with less manual orchestration.',
   },
   {
     id: 'providers',
