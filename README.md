@@ -116,6 +116,22 @@ The result:
 - the user sees hidden contradictions early
 - output is judged by proof, not tone
 
+## Community Signal Behind This Revamp
+
+This revamp is directly shaped by the patterns people keep repeating in public AI-coding discussions:
+
+- checkpoint restore is unreliable, so users fall back to manual Git safety nets
+- stale API and SDK advice keeps slipping into generated code
+- users get better results when the tool reads real project context instead of guessing
+- teams do not fully trust the same AI system to both generate and self-certify code
+
+CodeOrbit AI answers those complaints with:
+
+- `Continuity Vault` for reliable local recovery
+- `Freshness Sentinel` for stale-dependency detection
+- `Mission Lock` and `Hidden Pain Detector` for context-preserving execution
+- `Proof Gate` and `Model Jury` for trust separation and evidence-backed review
+
 ## Why This Is The Better Option
 
 Most coding tools make you choose between two tradeoffs:
