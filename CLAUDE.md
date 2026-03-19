@@ -8,6 +8,7 @@ OrbitForge is the public repo for the local product surfaces behind `orbitforge.
 
 This repo includes:
 
+- `apps/orbitforge-core`
 - `apps/orbitforge-vscode`
 - `apps/orbitforge-desktop`
 - `apps/orbitforge-cli`
@@ -27,6 +28,7 @@ OrbitForge exists to solve a few specific problems:
 - provider support drifting across product surfaces
 - local models being treated as second-class
 - AI output sounding complete without being release-ready
+- risky implementation choices being made from a single unchallenged agent lane
 - workspace context getting lost between editor, shell, and desktop
 
 When making changes, optimize for those problems first.
@@ -58,10 +60,22 @@ Path:
 Key job:
 - terminal-native execution for scripted or fast local workflows
 
+### Shared orchestration core
+
+Path:
+- `apps/orbitforge-core`
+
+Key job:
+- shared provider invocation
+- parallel agent orchestration
+- shared result formatting
+
 ## Build Commands
 
 ```bash
 npm install
+npm run build:core
+npm run test:core
 npm run build:extension
 npm run build:desktop
 npm run build:cli
@@ -82,7 +96,7 @@ npm run package:cli
 
 ### 1. Preserve provider parity
 
-If you change provider logic in one surface, inspect the other surfaces too.
+If you change provider logic in one surface, inspect the shared core and the other surfaces too.
 
 The provider vocabulary should remain aligned across the repo:
 
@@ -104,11 +118,26 @@ OrbitForge is not supposed to return vague prose. The response framing should co
 
 Do not weaken that contract casually.
 
-### 3. Prefer local-first ergonomics
+### 3. Preserve the parallel-agent framework
+
+OrbitForge now has a built-in parallel trio:
+
+- architect
+- implementer
+- critic
+
+If you change that framework:
+
+- keep the lanes intuitive
+- keep the converged output readable
+- keep the single-agent path fast
+- avoid adding complexity that makes the feature feel like manual orchestration
+
+### 4. Prefer local-first ergonomics
 
 When choosing defaults, do not optimize only for hosted SaaS providers. Local Ollama and local OpenAI-compatible endpoints are a core part of the product story.
 
-### 4. Keep docs honest
+### 5. Keep docs honest
 
 If a capability is private, partial, or not implemented in this public repo, say so plainly in the README or comments rather than implying it already exists.
 
@@ -127,6 +156,7 @@ A good OrbitForge change usually means:
 Claude Code should prioritize these over generic cleanup:
 
 - shared provider adapter extraction
+- stronger convergence heuristics for the parallel-agent runtime
 - consistent response parsing and error normalization
 - packaging verification improvements for Windows and Linux
 - secure credential handling improvements
@@ -138,5 +168,6 @@ Available project skills:
 
 - `/provider-parity-audit`
 - `/surface-shipping-check`
+- `/parallel-agent-upgrade`
 
 Use them when the task matches. They are meant to keep contributions focused on product risk instead of random refactors.

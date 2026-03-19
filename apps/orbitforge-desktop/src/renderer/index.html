@@ -38,6 +38,13 @@
               <span>Base URL</span>
               <input id="baseUrl" value="http://localhost:11434" />
             </label>
+            <label>
+              <span>Execution Mode</span>
+              <select id="mode">
+                <option value="single">Single Agent</option>
+                <option value="parallel">Parallel Trio</option>
+              </select>
+            </label>
           </div>
 
           <label>
@@ -55,11 +62,13 @@
             <textarea id="prompt">Inspect the project, define the implementation plan, describe the patch strategy, and list release validation steps.</textarea>
           </label>
 
+          <p class="eyebrow">Parallel Trio runs Architect, Implementer, and Critic together, then converges their output.</p>
           <button id="runButton">Run prompt</button>
         </div>
 
         <div class="panel">
           <p class="eyebrow">Output</p>
+          <p id="statusLine">Choose a mode and run a prompt.</p>
           <pre id="output">Run a prompt to receive a plan, implementation notes, validation steps, and remaining risks.</pre>
         </div>
       </section>

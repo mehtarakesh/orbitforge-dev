@@ -7,6 +7,8 @@
     "apps/*"
   ],
   "scripts": {
+    "build:core": "cd apps/orbitforge-core && npm run build",
+    "test:core": "cd apps/orbitforge-core && npm run test",
     "build:extension": "cd apps/orbitforge-vscode && npm run build",
     "build:desktop": "cd apps/orbitforge-desktop && npm run build",
     "build:cli": "cd apps/orbitforge-cli && npm run build",

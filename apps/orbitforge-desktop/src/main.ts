@@ -1,5 +1,6 @@
 import { BrowserWindow, app, ipcMain } from 'electron'
 import path from 'node:path'
+import { runOrbitForgeTask } from 'orbitforge-core'
 
 function createWindow() {
   const window = new BrowserWindow({
@@ -35,94 +36,29 @@ app.on('window-all-closed', () => {
 })
 
 ipcMain.handle('talent:run', async (_event, requestPayload) => {
-  const { provider, model, baseUrl, apiKey, prompt, workspaceContext } = requestPayload as Record<string, string>
-  const systemPrompt = `You are OrbitForge, a release-ready software engineer.
-Always return:
-1. A concise plan.
-2. The implementation approach.
-3. Validation steps.
-4. Remaining risks.`
+  const {
+    provider,
+    model,
+    baseUrl,
+    apiKey,
+    prompt,
+    workspaceContext,
+    mode,
+  } = requestPayload as Record<string, string>
 
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: `Workspace context:\n${workspaceContext || 'Not provided.'}\n\nTask:\n${prompt}` },
-  ]
-
-  async function parseJson(response: Response) {
-    const text = await response.text()
-    try {
-      return JSON.parse(text)
-    } catch {
-      throw new Error(`Unexpected response: ${text.slice(0, 400)}`)
-    }
-  }
-
-  if (provider === 'anthropic') {
-    const response = await fetch(`${String(baseUrl).replace(/\/$/, '')}/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'x-api-key': apiKey || process.env.ANTHROPIC_API_KEY || '',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 2400,
-        temperature: 0.2,
-        system: systemPrompt,
-        messages: messages.filter((entry) => entry.role !== 'system'),
-      }),
-    })
-
-    const responsePayload = await parseJson(response)
-
-    if (!response.ok) {
-      throw new Error(responsePayload.error?.message || 'Anthropic request failed')
-    }
-
-    return responsePayload.content?.map((entry: { text?: string }) => entry.text || '').join('\n') || ''
-  }
-
-  if (provider === 'ollama') {
-    const response = await fetch(`${String(baseUrl).replace(/\/$/, '')}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        stream: false,
-        messages,
-      }),
-    })
-
-    const responsePayload = await parseJson(response)
-
-    if (!response.ok) {
-      throw new Error(responsePayload.error || 'Ollama request failed')
-    }
-
-    return responsePayload.message?.content || ''
-  }
-
-  const response = await fetch(`${String(baseUrl).replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      messages,
-    }),
+  return runOrbitForgeTask({
+    provider: provider as
+      | 'ollama'
+      | 'lmstudio'
+      | 'openai'
+      | 'anthropic'
+      | 'openrouter'
+      | 'openai-compatible',
+    model,
+    baseUrl,
+    apiKey,
+    prompt,
+    workspaceContext,
+    mode: mode === 'parallel' ? 'parallel' : 'single',
   })
-
-  const responsePayload = await parseJson(response)
-
-  if (!response.ok) {
-    throw new Error(responsePayload.error?.message || responsePayload.error || 'Provider request failed')
-  }
-
-  return responsePayload.choices?.[0]?.message?.content || ''
 })

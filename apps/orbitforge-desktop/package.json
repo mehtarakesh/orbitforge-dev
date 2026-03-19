@@ -7,7 +7,7 @@
   "author": "OrbitForge contributors",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc -p . && node scripts/copy-renderer.mjs",
+    "build": "npm --prefix ../.. run build:core && tsc -p . && node scripts/copy-renderer.mjs",
     "start": "npm run build && electron .",
     "package": "npm run build && electron-builder",
     "package:mac": "npm run build && electron-builder --mac",
@@ -33,6 +33,9 @@
     "linux": {
       "target": ["AppImage", "tar.gz"]
     }
+  },
+  "dependencies": {
+    "orbitforge-core": "*"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

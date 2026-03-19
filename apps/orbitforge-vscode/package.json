@@ -15,7 +15,8 @@
   "activationEvents": [
     "onCommand:orbitforge.openPanel",
     "onCommand:orbitforge.explainSelection",
-    "onCommand:orbitforge.generateFromWorkspace"
+    "onCommand:orbitforge.generateFromWorkspace",
+    "onCommand:orbitforge.parallelWorkspacePlan"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -31,6 +32,10 @@
       {
         "command": "orbitforge.generateFromWorkspace",
         "title": "OrbitForge: Plan From Workspace"
+      },
+      {
+        "command": "orbitforge.parallelWorkspacePlan",
+        "title": "OrbitForge: Parallel Workspace Plan"
       }
     ],
     "configuration": {
@@ -56,18 +61,28 @@
           "type": "string",
           "default": "",
           "description": "Optional API key for hosted providers."
+        },
+        "orbitforge.agentMode": {
+          "type": "string",
+          "default": "single",
+          "enum": ["single", "parallel"],
+          "description": "Run OrbitForge through one agent lane or the built-in parallel architect / implementer / critic trio."
         }
       }
     }
   },
   "scripts": {
-    "build": "tsc -p .",
+    "build": "npm --prefix ../.. run build:core && tsc --noEmit -p . && esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=out/extension.js --sourcemap",
     "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "orbitforge-core": "*"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
     "@types/vscode": "^1.90.0",
     "@vscode/vsce": "^3.2.2",
+    "esbuild": "^0.25.10",
     "typescript": "^5.3.3"
   }
 }

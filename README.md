@@ -17,6 +17,7 @@ Most AI coding tools still break at the points that matter most in real work:
 - they look multi-model, but one surface gets all the attention and the rest drift
 - they treat local models as a second-class path
 - they return polished text instead of release-ready output
+- they trust one agent lane too much, even on risky implementation decisions
 - they make developers rebuild context every time they switch tools
 - they do not give contributors a sharp enough map of what actually needs to improve
 
@@ -78,7 +79,24 @@ OrbitForge pushes every surface toward the same release-ready response contract.
 Why that matters:
 It turns the assistant into something closer to a shipping collaborator than a chat box. The result is not just "what to do", but also "how to check whether it worked" and "what can still go wrong".
 
-### 4. Workspace context is rebuilt by hand every time someone changes tools
+### 4. One AI lane is often too confident for risky engineering work
+
+The pain:
+When a tool only gives one answer path, teams often mistake fluency for correctness. The model sounds decisive, but there is no built-in dissent, no structural challenge, and no fast way to compare approaches without running multiple manual prompts.
+
+How OrbitForge solves it:
+OrbitForge now ships a shared parallel-agent framework in the public repo. The built-in trio runs:
+
+- `Architect` to decompose the work and identify impacted surfaces
+- `Implementer` to propose the concrete patch path
+- `Critic` to challenge assumptions and surface missing proof
+
+Those lanes run together, then OrbitForge produces a converged recommendation on top of them.
+
+Why that matters:
+It gives developers controlled disagreement without forcing them to choreograph three separate chats. The workflow stays effortless, but the answer quality gets harder to fool.
+
+### 5. Workspace context is rebuilt by hand every time someone changes tools
 
 The pain:
 Developers constantly lose momentum when they jump between editor, desktop shell, and terminal. Most tools do not help much beyond a blank prompt box.
@@ -89,7 +107,7 @@ OrbitForge carries workspace context as a first-class input in every surface. Th
 Why that matters:
 Less time is spent repeating the assignment. More time is spent actually executing it.
 
-### 5. Open-source contributors usually do not know what the hard problems are
+### 6. Open-source contributors usually do not know what the hard problems are
 
 The pain:
 Many repos say "contributions welcome" but provide no real guidance on which product gaps are structural, repetitive, or strategically important. That causes low-signal PRs and leaves the hardest issues untouched.
@@ -110,6 +128,7 @@ Claude Code can contribute to the repo in a targeted way, and human contributors
 
 Public surfaces:
 
+- `apps/orbitforge-core`
 - `apps/orbitforge-vscode`
 - `apps/orbitforge-desktop`
 - `apps/orbitforge-cli`
@@ -124,6 +143,8 @@ Private for now:
 
 ```bash
 npm install
+npm run build:core
+npm run test:core
 npm run build:extension
 npm run build:desktop
 npm run build:cli
@@ -161,6 +182,7 @@ It includes:
 Recommended Claude Code contribution lanes:
 
 - extract a shared provider adapter layer instead of keeping similar request logic in three places
+- improve or extend the parallel-agent orchestration and convergence rules
 - normalize provider errors so the same failure has the same remediation text everywhere
 - add streaming support consistently across CLI, desktop, and VS Code
 - add secure credential storage instead of plain config entry where the platform supports it
@@ -177,6 +199,7 @@ Use this when touching:
 - base URL handling
 - model routing
 - response parsing
+- the parallel agent orchestration runtime
 
 It is meant to stop "fixes" that only improve one surface while the others quietly drift.
 
@@ -190,6 +213,17 @@ Use this when touching:
 - public docs about what ships
 
 It is meant to keep the desktop app, CLI, and extension aligned with the repo narrative and build commands.
+
+### `/parallel-agent-upgrade`
+
+Use this when touching:
+
+- agent lane design
+- convergence logic
+- single vs parallel mode UX
+- failure handling for one broken lane
+
+It is meant to make the multi-agent framework stronger without making it harder to use.
 
 ## GitHub Automation For Claude Code
 
@@ -205,8 +239,7 @@ That setup lets Claude Code help with review and scoped implementation work insi
 
 OrbitForge is opinionated about the problems it wants to solve, but the public repo still has open work:
 
-- provider request code is still duplicated across surfaces
-- the public repo does not yet expose a shared testing harness for provider parity
+- the parallel-agent runtime can gain stronger convergence heuristics and streaming updates
 - secure credential storage can be improved, especially outside hosted flows
 - Windows and Linux packaging need deeper release-host verification
 

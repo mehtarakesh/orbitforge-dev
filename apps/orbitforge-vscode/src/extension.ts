@@ -1,12 +1,12 @@
 import * as vscode from 'vscode'
-
-type ProviderId = 'ollama' | 'lmstudio' | 'openai' | 'anthropic' | 'openrouter' | 'openai-compatible'
+import { runOrbitForgeTask, type AgentMode, type ProviderId } from 'orbitforge-core'
 
 type TalentSettings = {
   provider: ProviderId
   baseUrl: string
   model: string
   apiKey: string
+  agentMode: AgentMode
 }
 
 function getSettings(): TalentSettings {
@@ -16,97 +16,22 @@ function getSettings(): TalentSettings {
     baseUrl: config.get<string>('baseUrl', 'http://localhost:11434'),
     model: config.get<string>('model', 'deepseek-coder:33b'),
     apiKey: config.get<string>('apiKey', ''),
+    agentMode: config.get<AgentMode>('agentMode', 'single'),
   }
 }
 
-async function requestTalent(prompt: string, contextText: string, settings = getSettings()) {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-
-  const messagePayload = [
-    {
-      role: 'system',
-      content:
-        'You are OrbitForge, a release-ready coding assistant. Return a plan, implementation approach, validation, and risks.',
-    },
-    {
-      role: 'user',
-      content: `Workspace context:\n${contextText}\n\nTask:\n${prompt}`,
-    },
-  ]
-
-  if (settings.provider === 'anthropic') {
-    headers['x-api-key'] = settings.apiKey
-    headers['anthropic-version'] = '2023-06-01'
-
-    const response = await fetch(`${settings.baseUrl.replace(/\/$/, '')}/messages`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: settings.model,
-        max_tokens: 2400,
-        system:
-          'You are OrbitForge, a release-ready coding assistant. Return a plan, implementation approach, validation, and risks.',
-        messages: messagePayload.filter((entry) => entry.role !== 'system'),
-      }),
-    })
-
-    const payload = (await response.json()) as { content?: Array<{ text?: string }>; error?: { message?: string } }
-
-    if (!response.ok) {
-      throw new Error(payload.error?.message || 'Anthropic request failed')
-    }
-
-    return payload.content?.map((entry) => entry.text || '').join('\n') || ''
-  }
-
-  if (settings.provider === 'ollama') {
-    const response = await fetch(`${settings.baseUrl.replace(/\/$/, '')}/api/chat`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: settings.model,
-        stream: false,
-        messages: messagePayload,
-      }),
-    })
-
-    const payload = (await response.json()) as { message?: { content?: string }; error?: string }
-
-    if (!response.ok) {
-      throw new Error(payload.error || 'Ollama request failed')
-    }
-
-    return payload.message?.content || ''
-  }
-
-  if (settings.apiKey) {
-    headers.Authorization = `Bearer ${settings.apiKey}`
-  }
-
-  const openAiBase = settings.baseUrl.replace(/\/$/, '')
-  const response = await fetch(`${openAiBase}/chat/completions`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: settings.model,
-      temperature: 0.2,
-      messages: messagePayload,
-    }),
+async function requestTalent(prompt: string, contextText: string, mode: AgentMode, settings = getSettings()) {
+  const result = await runOrbitForgeTask({
+    provider: settings.provider,
+    model: settings.model,
+    baseUrl: settings.baseUrl,
+    apiKey: settings.apiKey,
+    prompt,
+    workspaceContext: contextText,
+    mode,
   })
 
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>
-    error?: { message?: string } | string
-  }
-
-  if (!response.ok) {
-    const errorMessage = typeof payload.error === 'string' ? payload.error : payload.error?.message
-    throw new Error(errorMessage || 'Provider request failed')
-  }
-
-  return payload.choices?.[0]?.message?.content || ''
+  return `${result.summary}\n\n${result.output}`
 }
 
 async function collectWorkspaceSummary() {
@@ -115,7 +40,7 @@ async function collectWorkspaceSummary() {
   return lines || 'No workspace files found.'
 }
 
-function renderPanel(webview: vscode.Webview, output = 'Prompt OrbitForge from the panel.') {
+function renderPanel(webview: vscode.Webview, initialMode: AgentMode, output = 'Prompt OrbitForge from the panel.') {
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -133,6 +58,13 @@ function renderPanel(webview: vscode.Webview, output = 'Prompt OrbitForge from t
   <body>
     <div class="meta">OrbitForge</div>
     <h2>Model-agnostic coding panel</h2>
+    <label>
+      <div class="meta">Execution Mode</div>
+      <select id="mode" style="width: 100%; margin-bottom: 12px; padding: 12px; border-radius: 14px; background: #0f172a; color: white; border: 1px solid rgba(255,255,255,0.12);">
+        <option value="single"${initialMode === 'single' ? ' selected' : ''}>Single Agent</option>
+        <option value="parallel"${initialMode === 'parallel' ? ' selected' : ''}>Parallel Trio</option>
+      </select>
+    </label>
     <textarea id="prompt">Review the active workspace and produce a plan, implementation strategy, validation steps, and risks.</textarea>
     <button id="run">Run Prompt</button>
     <pre id="output">${output.replace(/</g, '&lt;')}</pre>
@@ -141,7 +73,8 @@ function renderPanel(webview: vscode.Webview, output = 'Prompt OrbitForge from t
       document.getElementById('run').addEventListener('click', () => {
         vscode.postMessage({
           type: 'runPrompt',
-          prompt: document.getElementById('prompt').value
+          prompt: document.getElementById('prompt').value,
+          mode: document.getElementById('mode').value
         });
       });
       window.addEventListener('message', (event) => {
@@ -157,11 +90,12 @@ function renderPanel(webview: vscode.Webview, output = 'Prompt OrbitForge from t
 
 export function activate(context: vscode.ExtensionContext) {
   const openPanelCommand = vscode.commands.registerCommand('orbitforge.openPanel', async () => {
+    const settings = getSettings()
     const panel = vscode.window.createWebviewPanel('orbitforge', 'OrbitForge', vscode.ViewColumn.Beside, {
       enableScripts: true,
     })
 
-    panel.webview.html = renderPanel(panel.webview)
+    panel.webview.html = renderPanel(panel.webview, settings.agentMode)
 
     panel.webview.onDidReceiveMessage(
       async (message) => {
@@ -171,7 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         try {
           const summary = await collectWorkspaceSummary()
-          const output = await requestTalent(message.prompt, summary)
+          const output = await requestTalent(message.prompt, summary, message.mode === 'parallel' ? 'parallel' : 'single')
           panel.webview.postMessage({ type: 'result', output })
         } catch (error) {
           panel.webview.postMessage({
@@ -201,7 +135,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     try {
-      const output = await requestTalent('Explain this code and suggest the safest next edit.', selectedText)
+      const output = await requestTalent('Explain this code and suggest the safest next edit.', selectedText, 'single')
       const doc = await vscode.workspace.openTextDocument({ content: output, language: 'markdown' })
       await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside)
     } catch (error) {
@@ -212,9 +146,11 @@ export function activate(context: vscode.ExtensionContext) {
   const generateFromWorkspaceCommand = vscode.commands.registerCommand('orbitforge.generateFromWorkspace', async () => {
     try {
       const summary = await collectWorkspaceSummary()
+      const settings = getSettings()
       const output = await requestTalent(
         'Inspect the workspace and produce the next implementation plan, validation commands, and release blockers.',
-        summary
+        summary,
+        settings.agentMode
       )
       const doc = await vscode.workspace.openTextDocument({ content: output, language: 'markdown' })
       await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside)
@@ -223,7 +159,27 @@ export function activate(context: vscode.ExtensionContext) {
     }
   })
 
-  context.subscriptions.push(openPanelCommand, explainSelectionCommand, generateFromWorkspaceCommand)
+  const parallelWorkspacePlanCommand = vscode.commands.registerCommand('orbitforge.parallelWorkspacePlan', async () => {
+    try {
+      const summary = await collectWorkspaceSummary()
+      const output = await requestTalent(
+        'Inspect the workspace, debate the best implementation path, and converge on the safest release plan.',
+        summary,
+        'parallel'
+      )
+      const doc = await vscode.workspace.openTextDocument({ content: output, language: 'markdown' })
+      await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside)
+    } catch (error) {
+      vscode.window.showErrorMessage(error instanceof Error ? error.message : 'OrbitForge parallel run failed.')
+    }
+  })
+
+  context.subscriptions.push(
+    openPanelCommand,
+    explainSelectionCommand,
+    generateFromWorkspaceCommand,
+    parallelWorkspacePlanCommand
+  )
 }
 
 export function deactivate() {

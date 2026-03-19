@@ -1,9 +1,11 @@
 const providerInput = document.getElementById('provider')
 const modelInput = document.getElementById('model')
 const baseUrlInput = document.getElementById('baseUrl')
+const modeInput = document.getElementById('mode')
 const apiKeyInput = document.getElementById('apiKey')
 const workspaceInput = document.getElementById('workspaceContext')
 const promptInput = document.getElementById('prompt')
+const statusLine = document.getElementById('statusLine')
 const output = document.getElementById('output')
 const runButton = document.getElementById('runButton')
 
@@ -23,20 +25,25 @@ providerInput.addEventListener('change', () => {
 })
 
 runButton.addEventListener('click', async () => {
-  output.textContent = 'Running prompt...'
+  statusLine.textContent =
+    modeInput.value === 'parallel' ? 'Running architect, implementer, and critic lanes...' : 'Running single agent...'
+  output.textContent = 'OrbitForge is working...'
 
   try {
     const result = await window.talentDesktop.runPrompt({
       provider: providerInput.value,
       model: modelInput.value,
       baseUrl: baseUrlInput.value,
+      mode: modeInput.value,
       apiKey: apiKeyInput.value,
       workspaceContext: workspaceInput.value,
       prompt: promptInput.value,
     })
 
-    output.textContent = result
+    statusLine.textContent = result.summary
+    output.textContent = result.output
   } catch (error) {
+    statusLine.textContent = 'Run failed.'
     output.textContent = error instanceof Error ? error.message : 'Desktop request failed.'
   }
 })
