@@ -2,7 +2,7 @@
   "name": "orbitforge-vscode",
   "displayName": "OrbitForge",
   "description": "Lifecycle-first AI coding workspace for Ollama, LM Studio, Anthropic, OpenAI, and compatible endpoints.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "mehtarakesh",
   "license": "Apache-2.0",
   "icon": "assets/icon.png",
@@ -44,6 +44,8 @@
     "onCommand:orbitforge.openPanel",
     "onCommand:orbitforge.openMissionHistory",
     "onCommand:orbitforge.exportMissionHistory",
+    "onCommand:orbitforge.proposePatch",
+    "onCommand:orbitforge.createBranch",
     "onCommand:orbitforge.explainSelection",
     "onCommand:orbitforge.generateFromWorkspace",
     "onCommand:orbitforge.parallelWorkspacePlan",
@@ -64,6 +66,14 @@
       {
         "command": "orbitforge.exportMissionHistory",
         "title": "OrbitForge: Export Mission History"
+      },
+      {
+        "command": "orbitforge.proposePatch",
+        "title": "OrbitForge: Propose Patch Diff"
+      },
+      {
+        "command": "orbitforge.createBranch",
+        "title": "OrbitForge: Create Git Branch"
       },
       {
         "command": "orbitforge.openPanel",

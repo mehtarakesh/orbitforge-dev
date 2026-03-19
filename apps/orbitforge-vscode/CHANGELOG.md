@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+
+- added provider streaming for single-lane missions (Ollama and OpenAI-compatible)
+- added git branch scaffolding and diff proposal tooling in the panel
+- added mission session tabs with streaming output per session
+
 ## 0.6.0
 
 - added mission sessions with tabs inside the panel so multiple runs stay open

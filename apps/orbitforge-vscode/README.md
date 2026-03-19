@@ -14,6 +14,8 @@ Instead of stopping at chat and code generation, OrbitForge helps you run work w
 - pinned presets for instant repeatable missions
 - multi-mission session tabs inside the panel
 - exportable mission history to markdown or JSON
+- built-in diff proposals and git branch scaffolding from the mission prompt
+- true provider streaming for single-lane missions when supported
 - provider parity across local and hosted models
 - parallel architect / implementer / critic lanes
 - workflow-aware mission boards
@@ -39,6 +41,10 @@ OrbitForge is built for the harder problems:
   Opens saved workspace missions so you can rerun or continue strong prior runs.
 - `OrbitForge: Export Mission History`
   Exports mission history to a markdown or JSON file.
+- `OrbitForge: Propose Patch Diff`
+  Generates a diff proposal for a chosen file and opens a VS Code diff view.
+- `OrbitForge: Create Git Branch`
+  Builds a branch + commit scaffold from your mission prompt.
 - `OrbitForge: Open Panel`
   Opens the interactive OrbitForge panel with presets, pinned missions, session tabs, slash commands, a mission timeline, streaming output, history, and blueprint launching.
 - `OrbitForge: Explain Selection`
@@ -86,7 +92,7 @@ Once published, install `OrbitForge` from the VS Code Marketplace or Open VSX.
 ### From VSIX
 
 ```bash
-code --install-extension orbitforge-vscode-0.6.0.vsix
+code --install-extension orbitforge-vscode-0.7.0.vsix
 ```
 
 ## Configure
@@ -101,6 +107,7 @@ Important settings:
 - `orbitforge.apiKey`
 - `orbitforge.agentMode`
 - `orbitforge.workflow`
+- `orbitforge.stream`
 
 ## Interactive Flow
 
@@ -123,6 +130,8 @@ Inside the panel, you can type slash commands like:
 - `/pins`
 - `/export md`
 - `/export json`
+- `/branch add-release-gate`
+- `/diff src/app.tsx`
 
 ## Development
 

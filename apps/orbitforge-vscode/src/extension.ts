@@ -5,8 +5,13 @@ import {
   type AgentMode,
   type AgentWorkflow,
   type OrbitForgeLifecycleBlueprint,
+  type OrbitForgeRunResult,
   type ProviderId,
 } from 'orbitforge-core'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execAsync = promisify(exec)
 
 type TalentSettings = {
   provider: ProviderId
@@ -68,6 +73,7 @@ type ExecuteMissionOptions = {
   settings?: TalentSettings
   onLog?: (line: string) => void
   onStage?: (stage: TimelineStageId) => void
+  onToken?: (token: string) => void
 }
 
 type ExecuteMissionResult = {
@@ -76,6 +82,7 @@ type ExecuteMissionResult = {
   summary: string
   history: MissionHistoryEntry[]
   historyEntry: MissionHistoryEntry
+  runResult: OrbitForgeRunResult
 }
 
 type TimelineStageId = 'idle' | 'context' | 'lanes' | 'runtime' | 'synthesis' | 'complete' | 'failed'
@@ -435,6 +442,137 @@ async function exportMissionHistory(extensionContext: vscode.ExtensionContext, p
   vscode.window.showInformationMessage(`OrbitForge history exported to ${saveUri.fsPath}`)
 }
 
+async function proposePatchDiff(extensionContext: vscode.ExtensionContext) {
+  const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**', 200)
+  const picked = await vscode.window.showQuickPick(
+    files.map((file) => ({
+      label: vscode.workspace.asRelativePath(file),
+      uri: file,
+    })),
+    {
+      title: 'Choose a file for OrbitForge diff proposal',
+      placeHolder: 'Select a file to generate a diff',
+    }
+  )
+
+  if (!picked) {
+    return
+  }
+
+  const instruction = await vscode.window.showInputBox({
+    prompt: 'Describe the change you want OrbitForge to propose for this file',
+    ignoreFocusOut: true,
+  })
+
+  if (!instruction?.trim()) {
+    return
+  }
+
+  const originalBytes = await vscode.workspace.fs.readFile(picked.uri)
+  const originalText = Buffer.from(originalBytes).toString('utf8')
+  const settings = getSettings()
+  const diffPrompt = [
+    `You are generating a unified diff for ${picked.label}.`,
+    'Only output a valid unified diff with --- and +++ headers.',
+    'Instruction:',
+    instruction,
+  ].join('\n')
+
+  const runResult = await requestTalent(
+    diffPrompt,
+    originalText,
+    'single',
+    'general',
+    undefined,
+    settings
+  )
+
+  const diffText = runResult.output
+  const patchedText = applyUnifiedDiff(originalText, diffText)
+
+  if (!patchedText) {
+    const doc = await vscode.workspace.openTextDocument({ content: diffText, language: 'diff' })
+    await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside)
+    vscode.window.showWarningMessage('OrbitForge could not apply the diff. The raw diff is open for review.')
+    return
+  }
+
+  const tempUri = vscode.Uri.joinPath(vscode.Uri.parse('untitled:'), picked.label + '.orbitforge.proposed')
+  const tempDoc = await vscode.workspace.openTextDocument(tempUri)
+  const editor = await vscode.window.showTextDocument(tempDoc, vscode.ViewColumn.Beside)
+  await editor.edit((edit) => {
+    edit.insert(new vscode.Position(0, 0), patchedText)
+  })
+
+  await vscode.commands.executeCommand(
+    'vscode.diff',
+    picked.uri,
+    tempUri,
+    `OrbitForge Diff: ${picked.label}`
+  )
+}
+
+function applyUnifiedDiff(original: string, diff: string) {
+  const lines = diff.split('\n')
+  const hunks = lines.filter((line) => line.startsWith('@@'))
+  if (!hunks.length) {
+    return null
+  }
+  const originalLines = original.split('\n')
+  const result: string[] = []
+  let pointer = 0
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+    if (line.startsWith('@@')) {
+      const match = /@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@/.exec(line)
+      if (!match) {
+        return null
+      }
+      const startLine = parseInt(match[1], 10) - 1
+      while (pointer < startLine) {
+        result.push(originalLines[pointer])
+        pointer += 1
+      }
+      i += 1
+      while (i < lines.length && !lines[i].startsWith('@@')) {
+        const hunkLine = lines[i]
+        if (hunkLine.startsWith('+')) {
+          result.push(hunkLine.slice(1))
+        } else if (hunkLine.startsWith('-')) {
+          pointer += 1
+        } else if (hunkLine.startsWith(' ')) {
+          result.push(hunkLine.slice(1))
+          pointer += 1
+        }
+        i += 1
+      }
+    } else {
+      i += 1
+    }
+  }
+
+  while (pointer < originalLines.length) {
+    result.push(originalLines[pointer])
+    pointer += 1
+  }
+
+  return result.join('\n')
+}
+
+async function createBranchFromPrompt(prompt: string) {
+  const scaffold = buildScaffold(prompt)
+  try {
+    await execAsync(`git checkout -b ${scaffold.branch}`)
+    await vscode.window.showInformationMessage(`OrbitForge created branch ${scaffold.branch}`)
+    return scaffold
+  } catch (error) {
+    vscode.window.showErrorMessage('OrbitForge could not create a git branch. Make sure this is a git repo.')
+    return scaffold
+  }
+}
+
 function resolveProviderBaseUrl(provider: ProviderId, baseUrl: string) {
   if (provider === 'ollama') {
     return baseUrl.replace(/\/+$/, '')
@@ -660,6 +798,8 @@ function renderSlashHints() {
     '/pins',
     '/export md',
     '/export json',
+    '/branch add-release-gate',
+    '/diff src/app.tsx',
   ]
 
   return commands
@@ -747,7 +887,7 @@ async function requestTalent(
         },
       }
     )
-    return `${result.summary}\n\n${result.output}`
+    return result
   }
 
   const result = await runOrbitForgeTask({
@@ -762,7 +902,7 @@ async function requestTalent(
     blueprint,
   })
 
-  return `${result.summary}\n\n${result.output}`
+  return result
 }
 
 async function openResultDocument(title: string, content: string, viewColumn = vscode.ViewColumn.Beside) {
@@ -823,23 +963,22 @@ async function executeMission(options: ExecuteMissionOptions): Promise<ExecuteMi
 
   options.onStage?.('runtime')
   options.onLog?.('Dispatching OrbitForge runtime')
-  const output = await requestTalent(
+  const runResult = await requestTalent(
     options.prompt,
     contextText,
     options.mode,
     options.workflow,
     options.blueprint,
     settings,
-    options.onLog && options.onStage && options.mode === 'single'
+    options.onToken && options.mode === 'single'
       ? {
           forceStream: true,
-          onToken: (token) => {
-            options.onLog?.(token)
-          },
+          onToken: options.onToken,
         }
       : undefined
   )
 
+  const output = `${runResult.summary}\n\n${runResult.output}`
   options.onStage?.('synthesis')
   const summary = extractMissionSummary(output)
   const historyEntry: MissionHistoryEntry = {
@@ -868,6 +1007,7 @@ async function executeMission(options: ExecuteMissionOptions): Promise<ExecuteMi
     summary,
     history,
     historyEntry,
+    runResult,
   }
 }
 
@@ -881,6 +1021,13 @@ async function streamOutputToPanel(panel: vscode.WebviewPanel, sessionId: string
       reset: index === 0,
     })
     await new Promise((resolve) => setTimeout(resolve, streamChunkDelayMs))
+  }
+}
+
+async function streamParallelAgents(panel: vscode.WebviewPanel, sessionId: string, result: OrbitForgeRunResult) {
+  for (const agent of result.agents) {
+    const header = `\n\n### ${agent.title} (${agent.status})\n\n`
+    await streamOutputToPanel(panel, sessionId, header + agent.output)
   }
 }
 
@@ -1497,6 +1644,10 @@ function renderPanel(
             <button class="secondary" id="refresh">Refresh Context</button>
             <button class="ghost" id="selectionPreset">Use Selection Review</button>
           </div>
+          <div class="button-row">
+            <button class="secondary" id="createBranch">Create Git Branch</button>
+            <button class="ghost" id="proposeDiff">Propose Diff</button>
+          </div>
           <div id="status" class="status"></div>
         </section>
 
@@ -1661,6 +1812,17 @@ function renderPanel(
           contextScope: scope.value,
           sessionId
         });
+      });
+
+      document.getElementById('createBranch').addEventListener('click', () => {
+        vscode.postMessage({
+          type: 'createBranch',
+          prompt: prompt.value
+        });
+      });
+
+      document.getElementById('proposeDiff').addEventListener('click', () => {
+        vscode.postMessage({ type: 'proposeDiff' });
       });
 
       document.getElementById('refresh').addEventListener('click', () => {
@@ -1832,14 +1994,14 @@ export function activate(context: vscode.ExtensionContext) {
             type: 'log',
             entry: line,
           })
-          if (mission.mode === 'single' && getSettings().stream && supportsStreaming(getSettings().provider)) {
-            panel.webview.postMessage({
-              type: 'stream',
-              sessionId,
-              text: line,
-              reset: false,
-            })
-          }
+        },
+        onToken: (token) => {
+          panel.webview.postMessage({
+            type: 'stream',
+            sessionId,
+            text: token,
+            reset: false,
+          })
         },
         onStage: (stage) => {
           pushTimeline(panel, stage)
@@ -1852,6 +2014,8 @@ export function activate(context: vscode.ExtensionContext) {
           type: 'log',
           entry: 'Streaming enabled: output delivered live.',
         })
+      } else if (mission.mode === 'parallel') {
+        await streamParallelAgents(panel, sessionId, result.runResult)
       } else {
         await streamOutputToPanel(panel, sessionId, result.output)
       }
@@ -1905,6 +2069,8 @@ export function activate(context: vscode.ExtensionContext) {
           '/pins',
           '/export md',
           '/export json',
+          '/branch <name>',
+          '/diff <file>',
         ].join('\n'),
       })
       return true
@@ -1945,6 +2111,21 @@ export function activate(context: vscode.ExtensionContext) {
         status: 'History export complete.',
         output: `Mission history exported as ${format.toUpperCase()}.`,
       })
+      return true
+    }
+
+    if (command === '/branch') {
+      const scaffold = await createBranchFromPrompt(value || 'orbitforge-work')
+      panel.webview.postMessage({
+        type: 'result',
+        status: 'Branch scaffold ready.',
+        output: `Branch: ${scaffold.branch}\nCommit: ${scaffold.commit}`,
+      })
+      return true
+    }
+
+    if (command === '/diff') {
+      await proposePatchDiff(context)
       return true
     }
 
@@ -2147,6 +2328,16 @@ export function activate(context: vscode.ExtensionContext) {
           return
         }
 
+        if (message.type === 'createBranch') {
+          await createBranchFromPrompt(message.prompt || 'orbitforge-work')
+          return
+        }
+
+        if (message.type === 'proposeDiff') {
+          await proposePatchDiff(context)
+          return
+        }
+
         if (message.type === 'historyAction') {
           const entry = getMissionHistory(context).find((item) => item.id === message.historyId)
 
@@ -2231,6 +2422,22 @@ export function activate(context: vscode.ExtensionContext) {
 
   const exportMissionHistoryCommand = vscode.commands.registerCommand('orbitforge.exportMissionHistory', async () => {
     await exportMissionHistory(context)
+  })
+
+  const proposePatchCommand = vscode.commands.registerCommand('orbitforge.proposePatch', async () => {
+    await proposePatchDiff(context)
+  })
+
+  const createBranchCommand = vscode.commands.registerCommand('orbitforge.createBranch', async () => {
+    const input = await vscode.window.showInputBox({
+      prompt: 'Describe the mission for your branch scaffold',
+      ignoreFocusOut: true,
+    })
+    if (!input?.trim()) {
+      return
+    }
+    const scaffold = await createBranchFromPrompt(input)
+    await vscode.window.showInformationMessage(`Branch: ${scaffold.branch} • Commit: ${scaffold.commit}`)
   })
 
   const explainSelectionCommand = vscode.commands.registerCommand('orbitforge.explainSelection', async () => {
@@ -2335,6 +2542,8 @@ export function activate(context: vscode.ExtensionContext) {
     openPanelCommand,
     openMissionHistoryCommand,
     exportMissionHistoryCommand,
+    proposePatchCommand,
+    createBranchCommand,
     explainSelectionCommand,
     generateFromWorkspaceCommand,
     parallelWorkspacePlanCommand,
