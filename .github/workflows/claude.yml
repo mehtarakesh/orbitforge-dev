@@ -1,0 +1,32 @@
+name: Claude Code
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  claude:
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--max-turns 5"
+          prompt: |
+            Work only inside the public OrbitForge repository scope.
+            Focus on the local product surfaces:
+            - apps/orbitforge-vscode
+            - apps/orbitforge-desktop
+            - apps/orbitforge-cli
+
+            Keep README claims honest.
+            Preserve provider parity across surfaces.
+            Preserve the release-ready output contract:
+            plan, implementation approach, validation, and remaining risks.

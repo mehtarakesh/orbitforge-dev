@@ -9,3 +9,4 @@ apps/orbitforge-cli/*.tgz
 apps/orbitforge-cli/node_modules/
 apps/orbitforge-desktop/dist/
 apps/orbitforge-desktop/node_modules/
+.claude/settings.local.json
