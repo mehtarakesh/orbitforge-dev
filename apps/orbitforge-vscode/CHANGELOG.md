@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0
+
+- routed the main VS Code commands into the interactive OrbitForge panel instead of opening markdown-only result documents
+- added runtime controls in the panel for provider, base URL, and model selection
+- added detected Ollama model chips and one-click runtime refresh/save actions
+
 ## 0.8.1
 
 - added Ollama model auto-detection with fallback to an installed local model

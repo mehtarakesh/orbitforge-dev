@@ -40,6 +40,15 @@ type PanelContextSnapshot = {
   hasSelection: boolean
 }
 
+type RuntimePanelState = {
+  provider: ProviderId
+  baseUrl: string
+  model: string
+  configuredModel: string
+  availableModels: string[]
+  runtimeNote?: string
+}
+
 type PromptPreset = {
   id: string
   label: string
@@ -274,6 +283,20 @@ function normalizeMode(value: unknown): AgentMode {
   return value === 'parallel' ? 'parallel' : 'single'
 }
 
+function normalizeProvider(value: unknown): ProviderId {
+  if (
+    value === 'lmstudio' ||
+    value === 'openai' ||
+    value === 'anthropic' ||
+    value === 'openrouter' ||
+    value === 'openai-compatible'
+  ) {
+    return value
+  }
+
+  return 'ollama'
+}
+
 function normalizeWorkflow(value: unknown): AgentWorkflow {
   if (value === 'review' || value === 'migration' || value === 'incident' || value === 'release') {
     return value
@@ -288,6 +311,32 @@ function normalizeContextScope(value: unknown): ContextScope {
   }
 
   return 'workspace'
+}
+
+function buildPanelTalentSettings(source: Record<string, unknown>, fallback = getSettings()): TalentSettings {
+  return {
+    ...fallback,
+    provider: normalizeProvider(source.provider),
+    baseUrl: typeof source.baseUrl === 'string' && source.baseUrl.trim() ? source.baseUrl.trim() : fallback.baseUrl,
+    model: typeof source.model === 'string' && source.model.trim() ? source.model.trim() : fallback.model,
+    agentMode: normalizeMode(source.mode ?? fallback.agentMode),
+    workflow: normalizeWorkflow(source.workflow ?? fallback.workflow),
+  }
+}
+
+async function collectRuntimePanelState(settings = getSettings()): Promise<RuntimePanelState> {
+  const runtimeSettings = await resolveRuntimeSettings(settings)
+  const availableModels =
+    runtimeSettings.provider === 'ollama' ? await listOllamaModels(runtimeSettings.baseUrl).catch(() => []) : []
+
+  return {
+    provider: runtimeSettings.provider,
+    baseUrl: runtimeSettings.baseUrl,
+    model: runtimeSettings.model,
+    configuredModel: settings.model,
+    availableModels,
+    runtimeNote: runtimeSettings.runtimeNote,
+  }
 }
 
 function escapeHtml(value: string) {
@@ -1302,7 +1351,7 @@ async function openMissionHistoryPicker(extensionContext: vscode.ExtensionContex
   })
 }
 
-async function launchGuidedSession(openPanel: () => Promise<void>, extensionContext: vscode.ExtensionContext) {
+async function launchGuidedSession(openPanel: () => Promise<unknown>, extensionContext: vscode.ExtensionContext) {
   const action = await vscode.window.showQuickPick(
     [
       {
@@ -1588,11 +1637,11 @@ function renderPanel(
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
-      select, textarea, button {
+      input, select, textarea, button {
         width: 100%;
         border-radius: 16px;
       }
-      select, textarea {
+      input, select, textarea {
         padding: 12px 14px;
         border: 1px solid var(--line);
         background: var(--panel-2);
@@ -1600,6 +1649,30 @@ function renderPanel(
       }
       textarea { min-height: 180px; resize: vertical; line-height: 1.6; }
       button { border: none; padding: 12px 14px; font-weight: 700; cursor: pointer; }
+      .runtime-note {
+        margin-top: 8px;
+        color: var(--accent);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .model-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .model-chip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.7);
+        color: var(--text);
+        padding: 8px 12px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .model-chip:hover {
+        border-color: rgba(105, 245, 225, 0.45);
+      }
       .primary {
         background: linear-gradient(135deg, var(--accent), var(--accent-2));
         color: #04263a;
@@ -1720,6 +1793,35 @@ function renderPanel(
 
       <div class="grid">
         <section class="glass">
+          <div class="section-title">Runtime lane</div>
+          <label>
+            <div class="label"><span>Provider</span><span>Choose the active runtime</span></div>
+            <select id="provider">
+              <option value="ollama"${snapshot.provider === 'ollama' ? ' selected' : ''}>Ollama</option>
+              <option value="lmstudio"${snapshot.provider === 'lmstudio' ? ' selected' : ''}>LM Studio</option>
+              <option value="openai"${snapshot.provider === 'openai' ? ' selected' : ''}>OpenAI</option>
+              <option value="anthropic"${snapshot.provider === 'anthropic' ? ' selected' : ''}>Anthropic</option>
+              <option value="openrouter"${snapshot.provider === 'openrouter' ? ' selected' : ''}>OpenRouter</option>
+              <option value="openai-compatible"${snapshot.provider === 'openai-compatible' ? ' selected' : ''}>OpenAI-compatible</option>
+            </select>
+          </label>
+          <label>
+            <div class="label"><span>Base URL</span><span>Runtime endpoint</span></div>
+            <input id="baseUrl" value="${escapeHtml(snapshot.baseUrl)}" />
+          </label>
+          <label>
+            <div class="label"><span>Model</span><span>Used for the next mission</span></div>
+            <input id="model" value="${escapeHtml(snapshot.model)}" />
+          </label>
+          <div id="runtime-note" class="runtime-note"></div>
+          <div id="model-chip-row" class="model-chip-row"></div>
+          <div class="button-row">
+            <button class="secondary" id="refreshRuntime">Refresh Runtime</button>
+            <button class="ghost" id="saveRuntime">Save Runtime</button>
+          </div>
+        </section>
+
+        <section class="glass">
           <div class="section-title">Mission composer</div>
           <label>
             <div class="label"><span>Execution mode</span><span>Single or dissent-driven</span></div>
@@ -1786,9 +1888,14 @@ function renderPanel(
       const output = document.getElementById('output');
       const status = document.getElementById('status');
       const prompt = document.getElementById('prompt');
+      const provider = document.getElementById('provider');
+      const baseUrl = document.getElementById('baseUrl');
+      const model = document.getElementById('model');
       const mode = document.getElementById('mode');
       const workflow = document.getElementById('workflow');
       const scope = document.getElementById('scope');
+      const runtimeNote = document.getElementById('runtime-note');
+      const modelChipRow = document.getElementById('model-chip-row');
       const contextGrid = document.getElementById('context-grid');
       const historyStack = document.getElementById('history-stack');
       const pinnedGrid = document.getElementById('pinned-grid');
@@ -1812,6 +1919,12 @@ function renderPanel(
         li.className = 'log-entry';
         li.textContent = value;
         logList.prepend(li);
+      };
+
+      const renderModelChips = (models) => {
+        modelChipRow.innerHTML = (models || [])
+          .map((entry) => '<button class="model-chip" data-model-chip="' + entry + '">' + entry + '</button>')
+          .join('');
       };
 
       const getSession = (id) => sessions.find((session) => session.id === id);
@@ -1917,6 +2030,9 @@ function renderPanel(
         upsertSession({ id: sessionId, title: 'Mission', source: 'panel-mission' });
         vscode.postMessage({
           type: 'runPrompt',
+          provider: provider.value,
+          baseUrl: baseUrl.value,
+          model: model.value,
           prompt: prompt.value,
           mode: mode.value,
           workflow: workflow.value,
@@ -1939,6 +2055,30 @@ function renderPanel(
       document.getElementById('refresh').addEventListener('click', () => {
         setStatus('Refreshing workspace context...');
         vscode.postMessage({ type: 'refreshContext' });
+      });
+
+      document.getElementById('refreshRuntime').addEventListener('click', () => {
+        setStatus('Refreshing runtime availability...');
+        vscode.postMessage({
+          type: 'refreshRuntime',
+          provider: provider.value,
+          baseUrl: baseUrl.value,
+          model: model.value,
+          mode: mode.value,
+          workflow: workflow.value
+        });
+      });
+
+      document.getElementById('saveRuntime').addEventListener('click', () => {
+        setStatus('Saving runtime settings...');
+        vscode.postMessage({
+          type: 'saveRuntime',
+          provider: provider.value,
+          baseUrl: baseUrl.value,
+          model: model.value,
+          mode: mode.value,
+          workflow: workflow.value
+        });
       });
 
       historyStack.addEventListener('click', (event) => {
@@ -1995,6 +2135,19 @@ function renderPanel(
         setStatus('Pinned preset loaded.');
       });
 
+      modelChipRow.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        const chip = target.closest('[data-model-chip]');
+        if (!chip) {
+          return;
+        }
+        model.value = chip.dataset.modelChip || model.value;
+        setStatus('Runtime model updated from detected options.');
+      });
+
       window.addEventListener('message', (event) => {
         const message = event.data;
         if (message.type === 'sessionStart') {
@@ -2022,11 +2175,24 @@ function renderPanel(
           timelineRow.innerHTML = message.html;
         }
         if (message.type === 'controls') {
+          if (typeof message.provider === 'string') provider.value = message.provider;
+          if (typeof message.baseUrl === 'string') baseUrl.value = message.baseUrl;
+          if (typeof message.model === 'string') model.value = message.model;
           if (typeof message.prompt === 'string') prompt.value = message.prompt;
           if (typeof message.mode === 'string') mode.value = message.mode;
           if (typeof message.workflow === 'string') workflow.value = message.workflow;
           if (typeof message.contextScope === 'string') scope.value = message.contextScope;
           setStatus(message.status || 'Controls updated.');
+        }
+        if (message.type === 'runtime') {
+          if (typeof message.provider === 'string') provider.value = message.provider;
+          if (typeof message.baseUrl === 'string') baseUrl.value = message.baseUrl;
+          if (typeof message.model === 'string') model.value = message.model;
+          runtimeNote.textContent = message.runtimeNote || '';
+          renderModelChips(message.availableModels || []);
+          if (message.runtimeNote) {
+            setStatus(message.runtimeNote);
+          }
         }
         if (message.type === 'clearLog') {
           clearLogs();
@@ -2050,12 +2216,37 @@ export function activate(context: vscode.ExtensionContext) {
   statusBar.command = 'orbitforge.guidedSession'
   statusBar.show()
 
-  const postPanelState = async (panel: vscode.WebviewPanel) => {
-    const refreshed = await collectPanelContext()
+  let activePanel: vscode.WebviewPanel | undefined
+  let panelRuntimeSettings = getSettings()
+
+  const postRuntimeState = async (panel: vscode.WebviewPanel, settings = panelRuntimeSettings) => {
+    const runtime = await collectRuntimePanelState(settings).catch(() => ({
+      provider: settings.provider,
+      baseUrl: settings.baseUrl,
+      model: settings.model,
+      configuredModel: settings.model,
+      availableModels: [],
+      runtimeNote: '',
+    }))
+    panel.webview.postMessage({
+      type: 'runtime',
+      provider: runtime.provider,
+      baseUrl: runtime.baseUrl,
+      model: runtime.model,
+      configuredModel: runtime.configuredModel,
+      availableModels: runtime.availableModels,
+      runtimeNote: runtime.runtimeNote,
+    })
+  }
+
+  const postPanelState = async (panel: vscode.WebviewPanel, settings = panelRuntimeSettings) => {
+    panelRuntimeSettings = settings
+    const refreshed = await collectPanelContext(settings)
     panel.webview.postMessage({
       type: 'context',
       html: renderContextCards(refreshed),
     })
+    await postRuntimeState(panel, settings)
     panel.webview.postMessage({
       type: 'history',
       html: renderHistoryCards(getMissionHistory(context)),
@@ -2084,6 +2275,7 @@ export function activate(context: vscode.ExtensionContext) {
       blueprint?: OrbitForgeLifecycleBlueprint
       source: string
       sessionId?: string
+      settings?: TalentSettings
     }
   ) => {
     const sessionId = mission.sessionId ?? `session-${Date.now()}`
@@ -2097,7 +2289,8 @@ export function activate(context: vscode.ExtensionContext) {
     pushTimeline(panel, 'context')
 
     try {
-      const streamEnabled = getSettings().stream && supportsStreaming(getSettings().provider)
+      const runtimeSettings = mission.settings || panelRuntimeSettings
+      const streamEnabled = runtimeSettings.stream && supportsStreaming(runtimeSettings.provider)
       const streamParallel = streamEnabled && mission.mode === 'parallel'
       const laneTitles: Record<string, string> = {
         architect: 'Architect',
@@ -2111,6 +2304,7 @@ export function activate(context: vscode.ExtensionContext) {
       const result = await executeMission({
         ...mission,
         extensionContext: context,
+        settings: mission.settings,
         onLog: (line) => {
           panel.webview.postMessage({
             type: 'log',
@@ -2162,7 +2356,7 @@ export function activate(context: vscode.ExtensionContext) {
         status: `Mission complete using ${result.contextLabel.toLowerCase()} context.`,
         output: result.output,
       })
-      await postPanelState(panel)
+      await postPanelState(panel, runtimeSettings)
       pushTimeline(panel, 'complete')
     } catch (error) {
       panel.webview.postMessage({
@@ -2426,11 +2620,25 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   const openPanel = async () => {
+    if (activePanel) {
+      activePanel.reveal(vscode.ViewColumn.Beside)
+      await postPanelState(activePanel, panelRuntimeSettings)
+      return activePanel
+    }
+
     const settings = getSettings()
+    panelRuntimeSettings = settings
     const snapshot = await collectPanelContext(settings)
     const panel = vscode.window.createWebviewPanel('orbitforge', 'OrbitForge', vscode.ViewColumn.Beside, {
       enableScripts: true,
       retainContextWhenHidden: true,
+    })
+    activePanel = panel
+
+    panel.onDidDispose(() => {
+      if (activePanel === panel) {
+        activePanel = undefined
+      }
     })
 
     panel.webview.html = renderPanel(
@@ -2441,6 +2649,7 @@ export function activate(context: vscode.ExtensionContext) {
       getPinnedPresets(context),
       'idle'
     )
+    await postPanelState(panel, settings)
 
     panel.webview.onDidReceiveMessage(
       async (message) => {
@@ -2450,10 +2659,37 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         if (message.type === 'refreshContext') {
-          await postPanelState(panel)
+          await postPanelState(panel, panelRuntimeSettings)
           panel.webview.postMessage({
             type: 'log',
             entry: 'Workspace context refreshed.',
+          })
+          return
+        }
+
+        if (message.type === 'refreshRuntime') {
+          panelRuntimeSettings = buildPanelTalentSettings(message, panelRuntimeSettings)
+          await postRuntimeState(panel, panelRuntimeSettings)
+          panel.webview.postMessage({
+            type: 'log',
+            entry: `Runtime refreshed for ${panelRuntimeSettings.provider}.`,
+          })
+          return
+        }
+
+        if (message.type === 'saveRuntime') {
+          panelRuntimeSettings = buildPanelTalentSettings(message, panelRuntimeSettings)
+          const config = vscode.workspace.getConfiguration('orbitforge')
+          await config.update('provider', panelRuntimeSettings.provider, vscode.ConfigurationTarget.Global)
+          await config.update('baseUrl', panelRuntimeSettings.baseUrl, vscode.ConfigurationTarget.Global)
+          await config.update('model', panelRuntimeSettings.model, vscode.ConfigurationTarget.Global)
+          await config.update('agentMode', panelRuntimeSettings.agentMode, vscode.ConfigurationTarget.Global)
+          await config.update('workflow', panelRuntimeSettings.workflow, vscode.ConfigurationTarget.Global)
+          await postPanelState(panel, panelRuntimeSettings)
+          panel.webview.postMessage({
+            type: 'result',
+            status: 'Runtime saved.',
+            output: `Provider: ${panelRuntimeSettings.provider}\nBase URL: ${panelRuntimeSettings.baseUrl}\nModel: ${panelRuntimeSettings.model}`,
           })
           return
         }
@@ -2488,6 +2724,9 @@ export function activate(context: vscode.ExtensionContext) {
           if (message.action === 'restore') {
             panel.webview.postMessage({
               type: 'controls',
+              provider: panelRuntimeSettings.provider,
+              baseUrl: panelRuntimeSettings.baseUrl,
+              model: panelRuntimeSettings.model,
               prompt: entry.prompt,
               mode: entry.mode,
               workflow: entry.workflow,
@@ -2511,6 +2750,7 @@ export function activate(context: vscode.ExtensionContext) {
               contextScope: entry.contextScope,
               blueprint: entry.blueprint,
               source: 'panel-history-rerun',
+              settings: panelRuntimeSettings,
             })
             return
           }
@@ -2519,6 +2759,8 @@ export function activate(context: vscode.ExtensionContext) {
         if (message.type !== 'runPrompt') {
           return
         }
+
+        panelRuntimeSettings = buildPanelTalentSettings(message, panelRuntimeSettings)
 
         if (typeof message.prompt === 'string' && message.prompt.trim().startsWith('/')) {
           const handled = await handleSlashCommand(panel, message.prompt)
@@ -2536,11 +2778,33 @@ export function activate(context: vscode.ExtensionContext) {
           contextScope: normalizeContextScope(message.contextScope),
           source: 'panel-mission',
           sessionId: message.sessionId,
+          settings: panelRuntimeSettings,
         })
       },
       undefined,
       context.subscriptions
     )
+
+    return panel
+  }
+
+  const runCommandInPanel = async (mission: {
+    title: string
+    prompt: string
+    mode: AgentMode
+    workflow: AgentWorkflow
+    contextScope: ContextScope
+    blueprint?: OrbitForgeLifecycleBlueprint
+    source: string
+    settings?: TalentSettings
+  }) => {
+    const panel = await openPanel()
+    panelRuntimeSettings = mission.settings || getSettings()
+    await postPanelState(panel, panelRuntimeSettings)
+    await runMissionInPanel(panel, {
+      ...mission,
+      settings: panelRuntimeSettings,
+    })
   }
 
   const guidedSessionCommand = vscode.commands.registerCommand('orbitforge.guidedSession', async () => {
@@ -2584,13 +2848,12 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     try {
-      await runInteractiveMission({
+      await runCommandInPanel({
         title: 'Selection Review',
         prompt: 'Explain this code, identify the weakest assumptions, and suggest the safest next edit.',
         mode: 'single',
         workflow: 'review',
         contextScope: 'selection',
-        extensionContext: context,
         source: 'selection-review',
       })
     } catch (error) {
@@ -2601,14 +2864,14 @@ export function activate(context: vscode.ExtensionContext) {
   const generateFromWorkspaceCommand = vscode.commands.registerCommand('orbitforge.generateFromWorkspace', async () => {
     try {
       const settings = getSettings()
-      await runInteractiveMission({
+      await runCommandInPanel({
         title: 'Workspace Plan',
         prompt: 'Inspect the workspace and produce the next implementation plan, validation commands, and release blockers.',
         mode: settings.agentMode,
         workflow: settings.workflow,
         contextScope: 'workspace',
-        extensionContext: context,
         source: 'workspace-plan',
+        settings,
       })
     } catch (error) {
       vscode.window.showErrorMessage(error instanceof Error ? error.message : 'OrbitForge request failed.')
@@ -2617,13 +2880,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   const parallelWorkspacePlanCommand = vscode.commands.registerCommand('orbitforge.parallelWorkspacePlan', async () => {
     try {
-      await runInteractiveMission({
+      await runCommandInPanel({
         title: 'Parallel Workspace Plan',
         prompt: 'Inspect the workspace, debate the best implementation path, and converge on the safest release plan.',
         mode: 'parallel',
         workflow: 'release',
         contextScope: 'workspace',
-        extensionContext: context,
         source: 'parallel-workspace-plan',
       })
     } catch (error) {

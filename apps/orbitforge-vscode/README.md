@@ -13,6 +13,7 @@ Instead of stopping at chat and code generation, OrbitForge helps you run work w
 - streaming-style output playback inside the panel
 - pinned presets for instant repeatable missions
 - multi-mission session tabs inside the panel
+- runtime controls in the panel for provider, base URL, and model selection
 - exportable mission history to markdown or JSON
 - built-in diff proposals and git branch scaffolding from the mission prompt
 - true provider streaming for single and parallel lanes when supported
@@ -48,6 +49,7 @@ OrbitForge is built for the harder problems:
   Builds a branch + commit scaffold from your mission prompt.
 - `OrbitForge: Open Panel`
   Opens the interactive OrbitForge panel with presets, pinned missions, session tabs, slash commands, a mission timeline, streaming output, history, and blueprint launching.
+  Main mission commands now route into this panel-first client so runs stay interactive instead of falling back to a plain markdown document.
 - `OrbitForge: Explain Selection`
   Reviews the current selection and suggests the safest next edit.
 - `OrbitForge: Plan From Workspace`
@@ -93,7 +95,7 @@ Once published, install `OrbitForge` from the VS Code Marketplace or Open VSX.
 ### From VSIX
 
 ```bash
-code --install-extension orbitforge-vscode-0.8.1.vsix
+code --install-extension orbitforge-vscode-0.9.0.vsix
 ```
 
 ## Configure
